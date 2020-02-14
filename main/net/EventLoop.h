@@ -41,10 +41,52 @@ public:
 	//Quits loop
 	void quit();
 
-	Timerstamp pollReturnTime() const {return pollReturnTime_;}
+	Timerstamp pollReturnTime() const { return pollReturnTime_; }
 
-	int64_t iteration() const {return tireation_;}
+	int64_t iteration() const { return iteration_; }
 
+	void runInLoop(Functor cb);
+
+	void queueInLoop(Functor cb);
+
+	size_t queueSize() const;
+
+	// timers
+	TimerId runAt(Timestamp time,TimeCallback cb);
+
+	TimerId runAfter(Timestamp time,TimerCallback cb);
+
+	TimerId runEvery(double interval,TimerCallback cb);
+
+	// internal usage
+	void wakeup();
+	void updateChannel(Channel* channel);
+	void removeChannel(Channel* channel);
+	bool hasChannel(Channel* channel);
+	
+	void assertInLoopThread()
+	{
+		if(!isInLoopThread())
+		{
+			abortNotInLoopThread();
+		}
+	}
+	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
+	bool eventHandling() const { return eventHandling_; }
+
+	void setContext(const boost::any &context)
+	{ context_ = context; }
+
+	const boost::any& getContext() const 
+	{ return context_; }
+
+	boost::any* getMutableContext()
+	{ return &context_; }
+
+	static EventLoop* getEventLoopOfCurrentThread();
+	
+
+	
 private:
 	void abortNotInLoopThread();
 	void handleRead(); // waked up;
@@ -63,7 +105,7 @@ private:
 	Timestamp pollReturnTime_;
 	std::unique_ptr<Poller> poller_;
 	std::unique_ptr<TimerQueue> timerQueue_;
-	int wakeunFd_;
+	int wakeupFd_;
 	std::unique_ptr<Channel> wakeupChannel_;
 	boost::any context_;
 
