@@ -21,14 +21,25 @@ private:
 	void connectEstablished();
 	// called when TcpServer has removed from map, should be called only once
 	void connectDestroyed();
+	
+	// Thread safe
+	void send(const void* messsage, size_t len);
+	void send(const std::string& message);
+	void send(Buffer* message);
+	// void send(Buffer&& message);
+	// void send(String&& message); // move instead of copy
+
+	void shutdown();
 private:
-	enum StateE { kConnecting, kConnected,kDisconnected };
+	enum StateE { kConnecting, kConnected,kDisconnecting,kDisconnected };
 
 	void setState(StateE s) { state_ = s; }
 	void handleRead();
 	void handleWrite();
 	void handleClose();
 	void handleError();
+	void sendInLoop();
+	void shutdownInloop();
 
 	EventLoop *loop_;
 	std::string name_;
@@ -42,6 +53,7 @@ private:
 	MessageCallback messageCallback_;
 	CloseCallback closeCallback_;
 	Buffer inputBuffer_;
+	Buffer outputBuffer_;
 };
 
 } // namespace net
