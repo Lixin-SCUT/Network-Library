@@ -1,17 +1,17 @@
 // TcpClient.cc
 // Created by Lixin on 2020.03.01
 
-#include "muduo/net/TcpClient.h"
+#include "main/net/TcpClient.h"
 
-#include "muduo/base/Logging.h"
-#include "muduo/net/Connector.h"
-#include "muduo/net/EventLoop.h"
-#include "muduo/net/SocketsOps.h"
+#include "main/base/Logging.h"
+#include "main/net/Connector.h"
+#include "main/net/EventLoop.h"
+#include "main/net/SocketsOps.h"
 
 #include <stdio.h> // for snprintf
 
-using namespace muduo;
-using namespace muduo::net;
+using namespace main;
+using namespace main::net;
 
 TcpClient::TcpClient(EventLoop *loop,
 					 const InetAddress &serverAddr,
