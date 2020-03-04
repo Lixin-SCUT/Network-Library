@@ -2,7 +2,7 @@
 // Created by Lixin on 2020.03.01
 
 #ifndef MAIN_NET_TCPCLIENT_H
-#define MAIn_NET_TCPCLIENT_H
+#define MAIN_NET_TCPCLIENT_H
 
 #include "main/base/Mutex.h"
 #include "main/net/TcpConnection.h"
