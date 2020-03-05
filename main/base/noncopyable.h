@@ -7,11 +7,15 @@
 namespace main
 {
 
-class copyable
+class noncopyable
 {
+public:
+	noncopyable(const noncopyable&) = delete;
+	noncopyable& operator=(const noncopybale&) = delete;
+
 protected:
-	copyable() = default;
-	~copyable() = default;
+	noncopyable() = default;
+	~noncopyable() = default;
 };
 
 } // namespace main
