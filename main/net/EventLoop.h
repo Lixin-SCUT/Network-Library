@@ -19,7 +19,7 @@ class TimerQueue;
 #include <boost/any.hpp>
 
 #include "main/base/Mutex.h"
-#include "main/base.CurrentThread.h"
+#include "main/base/CurrentThread.h"
 #include "main/base/Timestamp.h"
 #include "main/net/Callbacks.h"
 #include "main/net/TimerId.h"
