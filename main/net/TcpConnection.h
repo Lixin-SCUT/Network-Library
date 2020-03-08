@@ -5,14 +5,13 @@
 #define MAIN_NET_TCPCONNECTION_H
 
 #include "main/base/noncopyable.h"
-#include "main/base/StringPiece.h"
 #include "main/base/Types.h"
 #include "main/net/Callbacks.h"
 #include "main/net/Buffer.h"
 #include "main/net/InetAddress.h"
 
 #include <memory>
-
+#include <functional>
 #include <boost/any.hpp>
 
 // struct tcp_info is in <netinet/tcp.h>
@@ -110,7 +109,7 @@ private:
 	void handleWrite();
 	void handleClose();
 	void handleError();
-	void sendInLoop(const StringPiece& message);
+	void sendInLoop(const string& message);
 	void sendInLoop(const void* message, size_t len);
 	void shutdownInloop();
 	void forceCloseInLoop();
@@ -144,6 +143,52 @@ private:
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
 
 } // namespace net
+
+template<typename CLASS, typename... ARGS>
+class WeakCallback
+{
+ public:
+
+  WeakCallback(const std::weak_ptr<CLASS>& object,
+               const std::function<void (CLASS*, ARGS...)>& function)
+    : object_(object), function_(function)
+  {
+  }
+
+  // Default dtor, copy ctor and assignment are okay
+
+  void operator()(ARGS&&... args) const
+  {
+    std::shared_ptr<CLASS> ptr(object_.lock());
+    if (ptr)
+    {
+      function_(ptr.get(), std::forward<ARGS>(args)...);
+    }
+    // else
+    // {
+    //   LOG_TRACE << "expired";
+    // }
+  }
+
+ private:
+
+  std::weak_ptr<CLASS> object_;
+  std::function<void (CLASS*, ARGS...)> function_;
+};
+
+template<typename CLASS, typename... ARGS>
+WeakCallback<CLASS, ARGS...> makeWeakCallback(const std::shared_ptr<CLASS>& object,
+                                              void (CLASS::*function)(ARGS...))
+{
+  return WeakCallback<CLASS, ARGS...>(object, function);
+}
+
+template<typename CLASS, typename... ARGS>
+WeakCallback<CLASS, ARGS...> makeWeakCallback(const std::shared_ptr<CLASS>& object,
+                                              void (CLASS::*function)(ARGS...) const)
+{
+  return WeakCallback<CLASS, ARGS...>(object, function);
+}
 } // namespace main
 #endif // MAIN_NET_TCPCONNECTION_H
 

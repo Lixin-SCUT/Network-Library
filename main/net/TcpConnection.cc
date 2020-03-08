@@ -4,7 +4,6 @@
 #include "main/net/TcpConnection.h"
 
 #include "main/base/Logging.h"
-#include "main/base/WeakCallback.h"
 #include "main/net/Channel.h"
 #include "main/net/EventLoop.h"
 #include "main/net/Socket.h"
@@ -81,9 +80,9 @@ string TcpConnection::getTcpInfoString() const
 
 void TcpConnection::send(const void* data,int len)
 {
-	send(StringPiece(static_cast<const char*><data>,len));
+	send(string(static_cast<const char*><data>,len));
 }
-void TcpConnection::send(const StringPiece& message)
+void TcpConnection::send(const string& message)
 {
   if (state_ == kConnected)
   {
@@ -93,7 +92,7 @@ void TcpConnection::send(const StringPiece& message)
     }
     else
     {
-      void (TcpConnection::*fp)(const StringPiece& message) = &TcpConnection::sendInLoop;
+      void (TcpConnection::*fp)(const string& message) = &TcpConnection::sendInLoop;
       loop_->runInLoop(
           std::bind(fp,
                     this,     // FIXME
@@ -114,7 +113,7 @@ void TcpConnection::send(Buffer* buf)
     }
     else
     {
-      void (TcpConnection::*fp)(const StringPiece& message) = &TcpConnection::sendInLoop;
+      void (TcpConnection::*fp)(const string& message) = &TcpConnection::sendInLoop;
       loop_->runInLoop(
           std::bind(fp,
                     this,     // FIXME
@@ -124,7 +123,7 @@ void TcpConnection::send(Buffer* buf)
   }
 }
 
-void TcpConnection::sendInLoop(const StringPiece& message)
+void TcpConnection::sendInLoop(const string& message)
 {
   sendInLoop(message.data(), message.size());
 }

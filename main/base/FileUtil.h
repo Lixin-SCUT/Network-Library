@@ -4,7 +4,6 @@
 #pragma once
 
 #include "main/base/noncopyable.h"
-// #include "main/base/StringPiece.h"
 
 #include <sys/types.h>
 

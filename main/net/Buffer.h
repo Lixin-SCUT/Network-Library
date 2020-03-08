@@ -5,7 +5,6 @@
 #define MAIN_NET_BUFFER_H
 
 #include "main/base/copyable.h"
-#include "main/base/StringPiece.h"
 #include "main/base/Types.h"
 
 #include "main/net/Endian.h"
@@ -149,12 +148,12 @@ public:
 		return result;
 	}
 
-	StringPiece toStringPiece() const
+	string tostring() const
 	{
-		return StringPiece(Peek(),static_cast<int>(readableBytes()));
+		return string(Peek(),static_cast<int>(readableBytes()));
 	}
 
-	void append(const StringPiece& str)
+	void append(const string& str)
 	{
 		append(str.data(),str.size());
 	}
@@ -327,7 +326,7 @@ public:
 		// FIXME:use vector::shrink_to_fit() in C++11 if possible
 		Buffer other;
 		other.ensureWritableBytes(reableBytes + reverse);
-		other.append(toStringPiece());
+		other.append(tostring());
 		swap(other); // 'this' is another parameter unshown
 	}
 

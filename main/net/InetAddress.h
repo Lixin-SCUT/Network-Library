@@ -5,7 +5,6 @@
 #define MAIN_NET_INETADDRESS_H
 
 #include "main/base/copyable.h"
-#include "main/base/StringPiece.h"
 
 #include <netinet/in.h>
 
