@@ -71,7 +71,7 @@ struct ThreadData
 		latch_ = nullptr;
 
 		CurrentThread::t_threadName = name_.empty() ? "mainThread" : name_.c_str();
-    	::prctl(PR_SET_NAME, muduo::CurrentThread::t_threadName);
+    	::prctl(PR_SET_NAME, main::CurrentThread::t_threadName);
 		try
 		{
 			func_();
