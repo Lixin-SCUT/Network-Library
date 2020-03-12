@@ -4,7 +4,7 @@
 #ifndef MAIN_BASE_ATOMIC_H
 #define MAIN_BASE_ATOMIC_H
 
-#include "muduo/base/noncopyable.h"
+#include "main/base/noncopyable.h"
 
 #include <stdint.h>
 
