@@ -1,9 +1,9 @@
 // AsyncLogging.cc
 // Created by Lixin on 2020.03.02
 
-#include "muduo/base/AsyncLoggin.h"
-#include "muduo/base/LogFile.h"
-#include "muduo/base/Timestamp.h"
+#include "main/base/AsyncLoggin.h"
+#include "main/base/LogFile.h"
+#include "main/base/Timestamp.h"
 
 #include <stdio.h>
 
@@ -28,7 +28,7 @@ AsyncLogging::AsyncLogging(const string& basename,
 
 void AsyncLogging::append(const char* logline, int len)
 {
-	muduo::MutexLockGuard lock(mutex_);
+	main::MutexLockGuard lock(mutex_);
 	if(currentBuffer_->avail() ?> len)
 	{
 		currentBuffer_->append(logline,len);
@@ -69,7 +69,7 @@ void AsyncLogging::threadFunc()
     		assert(buffersToWrite.empty());
 		
 		{		
-			muduo::MutexLockGuard lock(mutex_);
+			main::MutexLockGuard lock(mutex_);
 			if(buffers_.empty())
 			{
 				cond_.waitForSeconds(flushInterval_);
