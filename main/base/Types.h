@@ -5,8 +5,8 @@
 #define MAIN_BASE_TYPES_H
 
 #include <stdint.h>
-#include <sring.h> // memset
-#include <sring>
+#include <string.h> // memset
+#include <string>
 
 #ifndef NDEBUG
 #include <assert.h>

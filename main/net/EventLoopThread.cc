@@ -1,72 +1,50 @@
 // EventLoopThread.cc
 // Created by Lixin on 2020.02.17
 
-#include "main/net/EventLoopThread.h"
+#include "EventLoopThread.h"
+#include <functional>
 
-#include "main/net/EventLoop.h"
+EventLoopThread::EventLoopThread()
+	:	loop_(NULL),
+		exiting_(false),
+		thread_(bind(&EventLoopThread::threadFunc, this), "EventLoopThread"),
+		mutex_(),
+		cond_(mutex_) 
+{ }
 
-using namespace main;
-using namespace main::net;
-
-EventLoopThread::EventLoopThread(const ThreadInitCallback& cb,
-                                 const string& name)
-  : loop_(NULL),
-    exiting_(false),
-    thread_(std::bind(&EventLoopThread::threadFunc, this), name),
-    mutex_(),
-    cond_(mutex_),
-    callback_(cb)
+EventLoopThread::~EventLoopThread() 
 {
+	exiting_ = true;
+	if (loop_ != NULL) 
+	{
+		loop_->quit();
+		thread_.join();
+	}
 }
 
-EventLoopThread::~EventLoopThread()
+EventLoop* EventLoopThread::startLoop() 
 {
-  exiting_ = true;
-  if (loop_ != NULL) // not 100% race-free, eg. threadFunc could be running callback_.
-  {
-    // still a tiny chance to call destructed object, if threadFunc exits just now.
-    // but when EventLoopThread destructs, usually programming is exiting anyway.
-    loop_->quit();
-    thread_.join();
-  }
+	assert(!thread_.started());
+	thread_.start();
+	{
+		MutexLockGuard lock(mutex_);
+		// 一直等到threadFun在Thread里真正跑起来
+		while (loop_ == NULL) cond_.wait();
+	}
+	return loop_;
 }
 
-EventLoop* EventLoopThread::startLoop()
+void EventLoopThread::threadFunc() 
 {
-  assert(!thread_.started());
-  thread_.start();
+	EventLoop loop;
 
-  EventLoop* loop = NULL;
-  {
-    MutexLockGuard lock(mutex_);
-    while (loop_ == NULL)
-    {
-      cond_.wait();
-    }
-    loop = loop_;
-  }
+	{
+		MutexLockGuard lock(mutex_);
+		loop_ = &loop;
+		cond_.notify();
+	}
 
-  return loop;
+	loop.loop();
+	// assert(exiting_);
+	loop_ = NULL;
 }
-
-void EventLoopThread::threadFunc()
-{
-  EventLoop loop;
-
-  if (callback_)
-  {
-    callback_(&loop);
-  }
-
-  {
-    MutexLockGuard lock(mutex_);
-    loop_ = &loop;
-    cond_.notify();
-  }
-
-  loop.loop();
-  //assert(exiting_);
-  MutexLockGuard lock(mutex_);
-  loop_ = NULL;
-}
-

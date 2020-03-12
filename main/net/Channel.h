@@ -1,97 +1,116 @@
 // Channel.h
 // Created by Lixin on 2020.02.14
 
-#ifndef MAIN_NET_CHANNEL_H
-#define MAIN_NET_CHANNEL_H
+#pragma once
 
-#include "main/base/noncopyable.h"
-#include "main/base/Timestamp.h"
-
+#include <sys/epoll.h>
+#include <sys/epoll.h>
 #include <functional>
 #include <memory>
-
-namespace main
-{
-
-namespace net
-{
+#include <string>
+#include <unordered_map>
+#include "Timer.h"
 
 class EventLoop;
+class HttpData;
 
-class Channel:boost::noncopyable
-{
-public:
-	typedef std::function<void()> EventCallback;
-	typedef std::function<void(Timestamp)> ReadEventCallback;
+typedef std::shared_ptr<Channel> SP_Channel;
 
-	Channel(EventLoop* loop,int fd);
-	~Channel();
+class Channel {
+private:
+  typedef std::function<void()> CallBack;
+  EventLoop *loop_;
+  int fd_;
+  __uint32_t events_;
+  __uint32_t revents_;
+  __uint32_t lastEvents_;
 
-	void handleEvent(Timestamp receiveTime);
-	void setReadCallback(ReadEventCallback cb)
-	{ readCallback_ = std::move(cb); }
-	void setWriteCallback(EventCallback cb)
-	{ writeCallback_ = std::move(cb); }
-	void setCloseCallback(EventCallback cb)
-	{ closeCallback_ = std::move(cb); }
-	void setErrorCallback(EventCallback cb)
-	{ errorCallback_ = std::move(cb); }
-
-	void tie(const std::share_ptr<void>&);
-
-	int fd() const { return fd_; }
-	int events() const { return events_; }
-	void set_revents(int revt) { revents_ = revt; }
-	int revents() { return revents_; }
-	bool isNoneEvent() const { return events_ == kNoneEvent; }
-
-	void enableReading() { events_ |= kReadEvent; update(); }
-	void disable() { events_ &= ~kReadEvent; update(); }
-	void enbaleWriting() { events_ |= kWritingEvent; update(); }
-	void disableWriting() { events_ &= ~kWritingEvent; update(); }
-	void disableAll() { events_ = kNoneEvent; update(); }
-	bool isWriting() const { return events_ & kWriteEvent; }
-	bool isReading() cosnt { return events_ & kReadEvent; }
-
-	int index() const { return index_; }
-	void set_index(int idx) { index_ = idx; }
-
-	string reventsToString() const;
-	string eventsToString() const;
-
-	void doNotLogHup() { logHup_=false; }
-
-	EventLoop* ownerLoop()  { return loop_; }
-	voiud remove();
+  // 方便找到上层持有该Channel的对象
+  std::weak_ptr<HttpData> holder_;
 
 private:
-	static string eventsToString(int fd,int ev);
+  int parse_URI();
+  int parse_Headers();
+  int analysisRequest();
 
-	void update();
-	void handleEventWithGuard(Timestamp receiveTime);
-	
-	static const int kNoneEvent;
-	static const int kReadEvent;
-	static const int kWriteEvent;
+  CallBack readHandler_;
+  CallBack writeHandler_;
+  CallBack errorHandler_;
+  CallBack connHandler_;
 
-	EventLoop* loop_;
-	const int fd_;
-	int events_;
-	int revents_;
-	int index_;
-	bool logHup_;
+public:
+  Channel(EventLoop *loop);
+  Channel(EventLoop *loop, int fd);
+  ~Channel();
+  int getFd();
+  void setFd(int fd);
 
-	std::weak_ptr<void> tie_;
-	bool tied_;
-	bool eventHandling_;
-	bool addedToLoop_;
-	ReadEventCallback readCallback_;
-	EventCallback writeCallback_;
-	EventCallback closeCallback_;
-	EventCallback errorCallback_;
+  void setHolder(std::shared_ptr<HttpData> holder) 
+	{	holder_ = holder; }
+  std::shared_ptr<HttpData> getHolder() 
+	{
+    std::shared_ptr<HttpData> ret(holder_.lock());
+    return ret;
+  }
+
+  void setReadHandler(CallBack && readHandler) 
+	{	readHandler_ = readHandler; }
+  void setWriteHandler(CallBack && writeHandler) 
+	{	writeHandler_ = writeHandler; }
+  void setErrorHandler(CallBack && errorHandler) 
+	{	errorHandler_ = errorHandler; }
+  void setConnHandler(CallBack &&	connHandler) 
+	{	connHandler_ = connHandler; }
+
+  void handleEvents() {
+    events_ = 0;
+    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) 
+		{
+      events_ = 0;
+      return;
+    }
+    if (revents_ & EPOLLERR) 
+		{
+      if (errorHandler_) 
+			{
+				errorHandler_();
+      }
+			events_ = 0;
+      return;
+    }
+    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) 
+		{
+      handleRead();
+    }
+    if (revents_ & EPOLLOUT) 
+		{
+      handleWrite();
+    }
+    handleConn();
+  }
+
+  void handleRead();
+  void handleWrite();
+  void handleError(int fd, int err_num, std::string short_msg);
+  void handleConn();
+
+  void setRevents(__uint32_t ev) 
+	{	revents_ = ev; }
+
+  void setEvents(__uint32_t ev) 
+	{	events_ = ev; }
+  __uint32_t &getEvents() 
+	{	return events_; }
+
+  bool EqualAndUpdateLastEvents() {
+    bool ret = (lastEvents_ == events_);
+    lastEvents_ = events_;
+    return ret;
+  }
+
+  __uint32_t getLastEvents() 
+	{	return lastEvents_; }
+
 };
 
-} // namespace net 
-} // namespace main
 
-#endif // MAIN_NET_CHANNEL_H

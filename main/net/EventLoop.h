@@ -1,122 +1,66 @@
 // EventLoop.h
 // Created by Lixin on 2020.02.11
 
-#ifndef MAIN_NET_EVENTLOOP_H
-#define MAIN_NET_EVENTLOOP_H
+#pragma once 
 
-class Channel;
-class Poller;
-class TimerQueue;
+#include "Channel.h"
+#include "Epoll.h"
+#include "Util.h"
+#include "base/CurrentThread.h"
+#include "base/Logging.h"
+#include "base/Thread.h"
 
-// Reactor,one thread one loop
-// interface class
-
-#include <atomic>
 #include <functional>
+#include <memory>
 #include <vector>
 
-#include <boost/any.hpp>
+#include <iostream>
 
-#include "main/base/Mutex.h"
-#include "main/base/CurrentThread.h"
-#include "main/base/Timestamp.h"
-#include "main/net/Callbacks.h"
-#include "main/net/TimerId.h"
-
-namespace main{
-
-namespace net{
-	
-class EventLoop : noncopyable
-{
+class EventLoop {
 public:
-	typedef std::fuction<void()> Functor;
-
+	typedef std::function<void()> Functor;
+  	
 	EventLoop();
-	~EventLoop();
-
-	//Loops forever
+  	~EventLoop();
+  	
 	void loop();
-	//Quits loop
-	void quit();
+  	void quit();
+  	
+	void runInLoop(Functor&& cb);
+  	void queueInLoop(Functor&& cb);
+  	
+	bool isInLoopThread() const 
+	{	return threadId_ == CurrentThread::tid(); }
+  	void assertInLoopThread() 
+	{	assert(isInLoopThread()); }
+  	
+	void shutdown(shared_ptr<Channel> channel) 
+	{	shutDownWR(channel->getFd()); }
+	void removeFromPoller(shared_ptr<Channel> channel) 
+	{	poller_->epoll_del(channel);}
 
-	Timerstamp pollReturnTime() const { return pollReturnTime_; }
+  	void updatePoller(shared_ptr<Channel> channel, int timeout = 0) 
+	{	poller_->epoll_mod(channel, timeout); }
+  	void addToPoller(shared_ptr<Channel> channel, int timeout = 0) 
+	{	poller_->epoll_add(channel, timeout); }
 
-	int64_t iteration() const { return iteration_; }
-
-	void runInLoop(Functor cb);
-
-	void queueInLoop(Functor cb);
-
-	size_t queueSize() const;
-
-	// timers
-	TimerId runAt(Timestamp time,TimeCallback cb);
-
-	TimerId runAfter(Timestamp time,TimerCallback cb);
-
-	TimerId runEvery(double interval,TimerCallback cb);
-
-	// internal usage
-	void wakeup();
-	void updateChannel(Channel* channel);
-	void removeChannel(Channel* channel);
-	bool hasChannel(Channel* channel);
-	
-	void assertInLoopThread()
-	{
-		if(!isInLoopThread())
-		{
-			abortNotInLoopThread();
-		}
-	}
-	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
-	bool eventHandling() const { return eventHandling_; }
-
-	void setContext(const boost::any &context)
-	{ context_ = context; }
-
-	const boost::any& getContext() const 
-	{ return context_; }
-
-	boost::any* getMutableContext()
-	{ return &context_; }
-
-	static EventLoop* getEventLoopOfCurrentThread();
-	
-
-	
 private:
-	void abortNotInLoopThread();
-	void handleRead(); // waked up;
-	void doPendingFunctors();
+ 	void wakeup();
+  	void handleRead();
+  	void doPendingFunctors();
+  	void handleConn();
 
-	void printActiveChannels() const; // DEBUG 
-
-	typedef std::vector<Channel*> ChannelList;
-
-	bool looping_; // atomic
-	std::atomic<bool> quit_;
-	bool eventHandling_; // atomic;
-	bool callingPendingFunctors_; // atomic
-	int64_t iterarion_;
-	const pid_t threadId_;
-	Timestamp pollReturnTime_;
-	std::unique_ptr<Poller> poller_;
-	std::unique_ptr<TimerQueue> timerQueue_;
-	int wakeupFd_;
-	std::unique_ptr<Channel> wakeupChannel_;
-	boost::any context_;
-
-	ChannelList activeChannels_;
-	Channel* currentActiveChannel_;
-
-	mutable MutexLock mutex_;
-	std::vector<Functor> pendingFunctors_ GUARDED_BY(mutex_);
+private:
+  	bool looping_;
+  	shared_ptr<Epoll> poller_;
+  	int wakeupFd_;
+  	bool quit_;
+  	bool eventHandling_;
+  	mutable MutexLock mutex_;
+  	std::vector<Functor> pendingFunctors_;
+  	bool callingPendingFunctors_;
+  	const pid_t threadId_;
+  	shared_ptr<Channel> pwakeupChannel_;
 };
 
-}// namespace net 
-}// namespace main
-
-#endif //MAIN_NET_EVENTLOOP_H
 

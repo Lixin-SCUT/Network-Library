@@ -1,42 +1,28 @@
 // EventLoopThread.h
 // Created by Lixin on 2020.02.17
 
-#ifndef MAIN_NET_EVENTLOOPTHREAD_H
-#define MAIN_NET_EVENTLOOPTHREAD_H
+#pragma once
 
-#include "main/base/Condition.h"
-#include "main/base/Mutex.h"
-#include "main/base/Thread.h"
+#include "EventLoop.h"
+#include "base/Condition.h"
+#include "base/MutexLock.h"
+#include "base/Thread.h"
+#include "base/noncopyable.h"
 
-namespace main
-{
-namespace net
-{
 
-class EventLoop;
+class EventLoopThread : noncopyable {
+public:
+	EventLoopThread();
+	~EventLoopThread();
+	EventLoop* startLoop();
 
-class EventLoopThread : noncopyable
-{
- public:
-  typedef std::function<void(EventLoop*)> ThreadInitCallback;
+private:
+	void threadFunc();
 
-  EventLoopThread(const ThreadInitCallback& cb = ThreadInitCallback(),
-                  const string& name = string());
-  ~EventLoopThread();
-  EventLoop* startLoop();
-
- private:
-  void threadFunc();
-
-  EventLoop* loop_ GUARDED_BY(mutex_);
-  bool exiting_;
-  Thread thread_;
-  MutexLock mutex_;
-  Condition cond_ GUARDED_BY(mutex_);
-  ThreadInitCallback callback_;
+private:
+	EventLoop* loop_;
+	bool exiting_;
+	Thread thread_;
+	MutexLock mutex_;
+	Condition cond_;
 };
-
-}  // namespace net
-}  // namespace main
-
-#endif  // MAIN_NET_EVENTLOOPTHREAD_H
