@@ -1,6 +1,5 @@
 // EventLoop.h
 // Created by Lixin on 2020.02.11
-// Version 0.2
 
 #ifndef MAIN_NET_EVENTLOOP_H
 #define MAIN_NET_EVENTLOOP_H
@@ -119,28 +118,5 @@ private:
 }// namespace net 
 }// namespace main
 
-#endif //MAIN_NET_EVENT_LOOP_H
+#endif //MAIN_NET_EVENTLOOP_H
 
-/*
-//Version 0.1
-#include <boost/utility.hpp>
-#include <pthread.h>
-
-#include "Channel.h"
-#include "Poller.h"
-#include "TimerQueue.h"
-
-
-class EventLoop{
-public:
-	EventLoop();
-	~EventLoop();
-	
-	void loop();
-	static EventLoop* getEventLoopOfCurrentThread();
-private:
-	const pid_t threadId_;
-	bool isInLoopThread();
-	bool assertInLoopThread();
-}
-*/

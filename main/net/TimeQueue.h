@@ -1,6 +1,5 @@
 // TimerQueue.h
 // Created by Lixin on 2020.02.16
-// Version 0.0
 
 #ifndef MAIN_NET_TIMEQUEUE_H
 #define MAIN_NET_TIMEQUEUE_H
@@ -25,6 +24,14 @@ class TimerId;
 class TimeQueue : noncopyable
 {
 public:
+	explicit TimerQueue(EventLoop* loop);
+  	~TimerQueue();
+
+	TimerId addTimer(TimerCallback cb,
+    	             Timestamp when,
+             		 double interval);
+
+  	void cancel(TimerId timerId);
 private:
 	typedef std::pair<Timestamp,Timer*> Entry;
 	typedef std::set<Entry> TimerList;

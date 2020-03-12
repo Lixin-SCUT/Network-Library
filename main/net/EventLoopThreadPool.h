@@ -16,7 +16,7 @@ namespace net
 {
 
 class EventLoop;
-class EventLoopThread();
+class EventLoopThread;
 
 class EventLoopThreadPool : noncopyable
 {

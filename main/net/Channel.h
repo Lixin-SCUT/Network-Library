@@ -1,6 +1,5 @@
 // Channel.h
 // Created by Lixin on 2020.02.14
-// Version 0.1
 
 #ifndef MAIN_NET_CHANNEL_H
 #define MAIN_NET_CHANNEL_H
@@ -50,7 +49,7 @@ public:
 	void disable() { events_ &= ~kReadEvent; update(); }
 	void enbaleWriting() { events_ |= kWritingEvent; update(); }
 	void disableWriting() { events_ &= ~kWritingEvent; update(); }
-	void disableALLL() { events_ = kNoneEvent; update(); }
+	void disableAll() { events_ = kNoneEvent; update(); }
 	bool isWriting() const { return events_ & kWriteEvent; }
 	bool isReading() cosnt { return events_ & kReadEvent; }
 

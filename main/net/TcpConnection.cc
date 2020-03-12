@@ -14,7 +14,7 @@
 using namespace main;
 using namespace main::net;
 
-void muduo::net::defaultConnectionCallback(const TcpConnectionPtr& conn)
+void main::net::defaultConnectionCallback(const TcpConnectionPtr& conn)
 {
   LOG_TRACE << conn->localAddress().toIpPort() << " -> "
             << conn->peerAddress().toIpPort() << " is "
@@ -22,7 +22,7 @@ void muduo::net::defaultConnectionCallback(const TcpConnectionPtr& conn)
   // do not call conn->forceClose(), because some users want to register message callback only.
 }
 
-void muduo::net::defaultMessageCallback(const TcpConnectionPtr&,
+void main::net::defaultMessageCallback(const TcpConnectionPtr&,
                                         Buffer* buf,
                                         Timestamp)
 {
@@ -82,6 +82,7 @@ void TcpConnection::send(const void* data,int len)
 {
 	send(string(static_cast<const char*><data>,len));
 }
+
 void TcpConnection::send(const string& message)
 {
   if (state_ == kConnected)
@@ -181,7 +182,7 @@ void TcpConnection::sendInLoop(const void* data,size_t len)
 		outoutBuffer_.append(static_cast<const char*>(data)+nwrote,remaining);
 		if(!channel_->isWriting())
 		{
-			channel_->enablWriting();
+			channel_->enableWriting();
 		}
 	}
 }
@@ -368,7 +369,7 @@ void TcpConnection::handleRead(Timestamp receiveTime)
 	else
 	{
 		errno = savedErrno;
-		LOG_STSERR << "TcpConnection::handleRead";
+		LOG_SYSERR << "TcpConnection::handleRead";
 		handleError();
 	}
 }

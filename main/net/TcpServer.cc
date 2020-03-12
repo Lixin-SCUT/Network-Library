@@ -44,7 +44,7 @@ TcpServer::~TcpServer()
 	}
 }
 
-void TcpServer::SetThreaNum(int numThreads)
+void TcpServer::SetThreadNum(int numThreads)
 {
 	assert(0 <= numThreads);
 	threadPool_->setThreadNum(numThreads);
@@ -65,7 +65,7 @@ void TcpServer::start()
 void TcpServer::newConnection(int sockfd,const InetAddrress& peerAddr)
 {
 	loop_->assertInLoopThread();
-	EventLoop* ioloop = threadPool_->geNextLoop();
+	EventLoop* ioloop = threadPool_->getNextLoop();
 	char buf[64];
 	snprintf(buf,sizeof(buf),"-%s#%d",ipPort_.c_str(),nextConnId_);
 	++nextConnId_;

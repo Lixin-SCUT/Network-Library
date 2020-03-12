@@ -1,6 +1,5 @@
 // Channel.cc
 // Created by Lixin on 2020.02.14
-// Version 0.1
 
 #include "main/base/Logging.h"
 #include "main/net/Channel.h"
@@ -97,7 +96,7 @@ void Channel::handleEventWithGuard(Timestamp receiveTime)
 
 	if(revents_ & (POLLERR | POLLNVAL))
 	{
-		if(errCallback_) errorCallback_();
+		if(errorCallback_) errorCallback_();
 	}
 
 	if(revents_ & (POLLIN | POLLPRI | POLLRDHUP))
@@ -107,7 +106,7 @@ void Channel::handleEventWithGuard(Timestamp receiveTime)
 
 	if(revents_ & POLLOUT)
 	{
-		if(writeCallback_) writeCallbakc_();
+		if(writeCallback_) writeCallback_();
 	}
 	eventHandling_=false;
 }

@@ -1,6 +1,5 @@
 // Poller.h
 // Created by Lixin on 2020.02.14
-// Version 0.1
 
 #ifndef MAIN_NET_POLLER_H
 #define MAIN_NET_POLLER_H

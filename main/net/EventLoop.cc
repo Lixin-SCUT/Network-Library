@@ -105,23 +105,23 @@ void EventLoop::loop()
 	
 	while(!quit_)
 	{
-	activeChannels_.clear();
-	pollReturnTime_ = poller_->poll(kPollTimeMs,&activeChannels_);
-	++iteration_;
-	if(Logger::logLevel() <= Logger::TRACE)
-	{
-		printActiveChannels();
-	}
+		activeChannels_.clear();
+		pollReturnTime_ = poller_->poll(kPollTimeMs,&activeChannels_);
+		++iteration_;
+		if(Logger::logLevel() <= Logger::TRACE)
+		{
+			printActiveChannels();
+		}
 
-	eventHandling_ = true;
-	for(Channel* channel : activeChannels_)
-	{
-		currentActiveChannel_ = channel;
-		currenActiveChannel_->handleEvent(pollReturnTime_);
-	}
-	currentActiveChannel_ = NULL;
-	eventHandling_ = false;
-	doPendingFunctors();
+		eventHandling_ = true;
+		for(Channel* channel : activeChannels_)
+		{
+			currentActiveChannel_ = channel;
+			currenActiveChannel_->handleEvent(pollReturnTime_);
+		}
+		currentActiveChannel_ = NULL;
+		eventHandling_ = false;
+		doPendingFunctors();
 	}
 
 	LOG_TRACE << "EventLoop " << this << " stop looping";
@@ -227,7 +227,7 @@ void EventLoop::abortNotInLoopThread()
 void EventLoop::wakeup()
 {
 	uint64_t one = 1;
-	ssize_t n = sockets::write(wakeunFd_,&one,sizeof one);
+	ssize_t n = sockets::write(wakeupFd_,&one,sizeof one);
 	if(n != sizeof one)
 	{
 		LOG_ERROR << "EventLoop::wakeup() writes " << n << " bytes instead of 8";

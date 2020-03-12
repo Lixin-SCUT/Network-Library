@@ -1,6 +1,5 @@
 // TimerQueue.cc
 // Created by Lixin on 2020.02.16
-// Version 0.0
 
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
@@ -227,7 +226,7 @@ void TimerQueue::reset(const std::vector<Entry>& expired,Timestamp now)
 		resetTimerfd(timerfd_,nextExpire);
 	}
 }
-:bool TimerQueue::insert(Timer* timer)
+bool TimerQueue::insert(Timer* timer)
 	{
 		loop_->assertInLoopThread();
 		assert(timers_.size() == activeTimers_.size());
