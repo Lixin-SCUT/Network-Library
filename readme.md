@@ -1,6 +1,7 @@
 ## 项目简介
 ### 项目的简介
   参考了muduo数据库的思想，分析其中的差异，进行进一步的思考与学习，并实现一个基于Reactor的模式的网络库。
+  
 主要技术点：
 1. 非阻塞I/O + I/O复用（EPOLL）
 2. Reactor + one thread per loop模式
