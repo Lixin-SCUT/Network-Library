@@ -16,7 +16,6 @@
 #include <memory>
 
 #include <iostream>
-using namespace std;
 
 namespace CurrentThread 
 {
@@ -119,7 +118,8 @@ void Thread::start()
 	{
 		started_ = false;
 		delete data;
-	} else 
+	} 
+	else 
 	{
 		latch_.wait();
 		assert(tid_ > 0);

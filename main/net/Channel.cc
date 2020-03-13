@@ -34,6 +34,35 @@ Channel::~Channel() {
 int Channel::getFd() { return fd_; }
 void Channel::setFd(int fd) { fd_ = fd; }
 
+void Channel::handleEvents() 
+{
+    	events_ = 0;
+	if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) 
+	{
+      		events_ = 0;
+      		return;
+    	}
+    	if (revents_ & EPOLLERR) 
+	{
+      		if (errorHandler_) 
+		{
+			errorHandler_();
+      		}
+		events_ = 0;
+      		return;
+    	}
+    	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) 
+	{
+      		handleRead();
+    	}
+    	if (revents_ & EPOLLOUT) 
+	{
+      		handleWrite();
+    	}
+    	handleConn();
+}
+
+
 void Channel::handleRead() 
 {
   	if (readHandler_) 

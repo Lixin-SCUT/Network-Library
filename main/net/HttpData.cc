@@ -359,9 +359,8 @@ void HttpData::handleConn() {
 			loop_->updatePoller(channel_, timeout);
 		}
 	}  
-	else if  
-	(!error_ && connectionState_ == H_DISCONNECTING &&
-					(events_ & EPOLLOUT))  
+	else if  (!error_ && connectionState_ == H_DISCONNECTING 
+			&& (events_ & EPOLLOUT))  
 	{
 		events_ = (EPOLLOUT | EPOLLET);
 	}  

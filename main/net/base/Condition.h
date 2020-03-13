@@ -3,45 +3,36 @@
 
 #pragma once
 
-#include "main/base/Mutex.h"
-#include "main/base/noncopyable.h"
+#include "MutexLock.h"
+#include "noncopyable.h"
 
+#include <errno.h>
 #include <pthread.h>
+#include <time.h>
+#include <cstdint>
 
-namespace main
-{
-
-class Condition : noncopyable
-{
+class Condition : noncopyable {
 public:
-	Condition(MutexLock &mutex)
-		:	mutex_(mutex)
-	{	pthread_cond_init(&cond_, nullptr); }
-
-	~Condtion()
-	{	pthread_cond_destroy(&cond_); }
-
-	void wait()
-	{	pthread_cond_wait(&cond_, mutex.get()); }
-
-	void signal()
-	{	pthread_cond_signal(&cond_); }
-
-	void broadcast()
-	{	pthread_cond_broadcast(&cond_); }
-
-	void waitForSeconds(int seconds)
+	explicit Condition(MutexLock &_mutex) 
+		: mutex(_mutex) 
 	{
-		struct timspec abstime;
-		clock_gettime(CLOCK_REALTIME, &abstime);
-  		abstime.tv_sec += static_cast<time_t>(seconds); 
+		pthread_cond_init(&cond, NULL);
+  	}
+  	~Condition() { pthread_cond_destroy(&cond); }
 
-  		return ETIMEDOUT == pthread_cond_timedwait(&cond_, 
-													mutex_.get(), 
-													&abstime);
-	}
+  	void wait() { pthread_cond_wait(&cond, mutex.get()); }
+  	void notify() { pthread_cond_signal(&cond); }
+  	void notifyAll() { pthread_cond_broadcast(&cond); }
+  	
+	bool waitForSeconds(int seconds) 
+	{
+		struct timespec abstime;
+		clock_gettime(CLOCK_REALTIME, &abstime);
+    		abstime.tv_sec += static_cast<time_t>(seconds);
+    		return ETIMEDOUT == pthread_cond_timedwait(&cond, mutex.get(), &abstime);
+ 	 }
+
 private:
-	MutexLock &mutex_;
-	pthread_cond_t cond_;
-}
-} // namespace main
+  	MutexLock &mutex;
+  	pthread_cond_t cond;
+};

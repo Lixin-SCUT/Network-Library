@@ -62,32 +62,7 @@ public:
   void setConnHandler(CallBack &&	connHandler) 
 	{	connHandler_ = connHandler; }
 
-  void handleEvents() {
-    events_ = 0;
-    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) 
-		{
-      events_ = 0;
-      return;
-    }
-    if (revents_ & EPOLLERR) 
-		{
-      if (errorHandler_) 
-			{
-				errorHandler_();
-      }
-			events_ = 0;
-      return;
-    }
-    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) 
-		{
-      handleRead();
-    }
-    if (revents_ & EPOLLOUT) 
-		{
-      handleWrite();
-    }
-    handleConn();
-  }
+  void handleEvents(); 
 
   void handleRead();
   void handleWrite();
