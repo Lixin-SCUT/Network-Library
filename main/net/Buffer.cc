@@ -3,8 +3,6 @@
 
 #include "main/net/Buffer.h"
 
-#include "main/net/SocketsOps.h"
-
 #include <errno.h> // for errno
 #include <sys/uio.h> // for readv and iovec
 

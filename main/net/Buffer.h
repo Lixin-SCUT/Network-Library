@@ -1,13 +1,9 @@
 // Buffer.h
 // Created by Lixin on 2020.02.20
 
-#ifndef MAIN_NET_BUFFER_H
-#define MAIN_NET_BUFFER_H
+#pragma once
 
-#include "main/base/copyable.h"
-#include "main/base/Types.h"
-
-#include "main/net/Endian.h"
+#include "base/copyable.h"
 
 #include <algorithm>
 #include <vector>
@@ -15,10 +11,7 @@
 #include <assert.h>
 #include <string.h>
 
-namespace main
-{
-namespace net
-{
+
 class Buffer : public copyable
 {
 public:
@@ -375,6 +368,4 @@ private:
 	static const char kCRLF[];
 };
 
-} // namespace net
-} // namepspace main
-#endif // MAIN_NET_BUFFER_H
+
