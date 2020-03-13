@@ -1,111 +1,88 @@
 // TcpServer.cc
 // Created by Lixin on 2020.02.19
 
-#include "main/net/TcpServer.h"
+#include "TcpServer.h"
 
-#include "main/net/Logging.h"
-#include "main/net/Acceptor.h"
-#include "main/net/EventLoop.h"
-#include "main/net/EventLoopThreadPool.h"
-#include "main/net/SocktsOps.h"
-
-#include <stdio.h> // for snprintf
-
-using namespace main;
-using namespace main::net;
-
-TcpServer::TcpServer(EventLoop* loop,
-					 InetAddress& listenAddr,
-					 const stirng& nameArg
-					 Option option)
+#include "Util.h"
+#include "base/Logging.h"
+	
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <functional>
+	
+Server::Server(EventLoop *loop, int threadNum, int port)
 	: loop_(loop),
-	  ipPort_(listendAddr.toIpPort()),
-	  name_(nameArg)
-	  acceptor_(new Acceptor(loop,listenAddr,option == kReusePort)),
-	  threadPool_(new EventLoopThreadPool(loop,name_)),
-	  connectionCallback_(defaultConnectionCallback),
-	  nextConnId_(1)
+	  threadNum_(threadNum),
+	  eventLoopThreadPool_(new EventLoopThreadPool(loop_, threadNum)),
+	  started_(false),
+	  acceptChannel_(new Channel(loop_)),
+	  port_(port),
+	  listenFd_(socket_bind_listen(port_)) 
 {
-	acceptor_->setNewConnectionCallback(
-		std::bind(&TcpServer::newConnection,this,_1,_2));		
-}
-
-TcpServer::~TcpServer()
-{
-	loop_->asserInLoopThread();
-	LOG_TRACE << "TcpServer::~TcpServer [" << name_ << "] destrcusting";
-
-	for(auto& item : connections_)
+	acceptChannel_->setFd(listenFd_);
+	handle_for_sigpipe();
+	if (setSocketNonBlocking(listenFd_) < 0) 
 	{
-		TcpConnectionPtr conn(item.second);
-		item.second.reset();
-		conn->getLoop()->runInLoop(
-			std::bind(&TcpConnection::connectDestroyed,conn));
+		perror("set socket non block failed");
+		abort();
 	}
 }
 
-void TcpServer::SetThreadNum(int numThreads)
+void Server::start() 
 {
-	assert(0 <= numThreads);
-	threadPool_->setThreadNum(numThreads);
+	eventLoopThreadPool_->start();
+	// acceptChannel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
+	acceptChannel_->setReadHandler(bind(&Server::handNewConn, this));
+	acceptChannel_->setConnHandler(bind(&Server::handThisConn, this));
+	loop_->addToPoller(acceptChannel_, 0);
+	started_ = true;
 }
 
-void TcpServer::start()
+void Server::handNewConn() 
 {
-	if(started_.getAndSet(1) == 0)
+	struct sockaddr_in client_addr;
+	memset(&client_addr, 0, sizeof(struct sockaddr_in));
+	socklen_t client_addr_len = sizeof(client_addr);
+	int accept_fd = 0;
+	while ((accept_fd = accept(listenFd_, 
+				(struct sockaddr *)&client_addr,
+				&client_addr_len)) > 0) 
 	{
-		threadPool_->start(threadInitCallback_);
+		EventLoop *loop = eventLoopThreadPool_->getNextLoop();
+		LOG << "New connection from " << inet_ntoa(client_addr.sin_addr) << ":"
+				<< ntohs(client_addr.sin_port);
+		// cout << "new connection" << endl;
+		// cout << inet_ntoa(client_addr.sin_addr) << endl;
+		// cout << ntohs(client_addr.sin_port) << endl;
+		/*
+		// TCP的保活机制默认是关闭的
+		int optval = 0;
+		socklen_t len_optval = 4;
+		getsockopt(accept_fd, SOL_SOCKET,	SO_KEEPALIVE, &optval, &len_optval);
+		cout << "optval ==" << optval << endl;
+		*/
+		// 限制服务器的最大并发连接数
+		if (accept_fd >= MAXFDS) 
+		{
+			close(accept_fd);
+			continue;
+		}
+		// 设为非阻塞模式
+		if (setSocketNonBlocking(accept_fd) < 0) 
+		{
+			LOG << "Set non block failed!";
+			// perror("Set non block failed!");
+			return;
+		}
 
-		assert(!acceptor_->listening());
-		loop_->runInLoop(
-			std::bind(&Acceptor::listen,get_pointer(acceptor_)));
+		setSocketNodelay(accept_fd);
+		// setSocketNoLinger(accept_fd);
+
+		shared_ptr<HttpData> req_info(new HttpData(loop, accept_fd));
+		req_info->getChannel()->setHolder(req_info);
+		loop->queueInLoop(std::bind(&HttpData::newEvent, req_info));
 	}
-}
-
-void TcpServer::newConnection(int sockfd,const InetAddrress& peerAddr)
-{
-	loop_->assertInLoopThread();
-	EventLoop* ioloop = threadPool_->getNextLoop();
-	char buf[64];
-	snprintf(buf,sizeof(buf),"-%s#%d",ipPort_.c_str(),nextConnId_);
-	++nextConnId_;
-	string connName = name_ + buf;
-
-	LOG_INFO << "TcpServer::newConnection [" << name_
-			 << "] - new connection [" << connName
-			 << "] from " << peerAddr.toIpPort();
-	InetAddress localAddr(sockets::getLocalAddr(sockfd));
-	// FIXME poll with zero timeout to double confirm the new connection
-    // FIXME use make_shared if necessary
-	TcpConnectionPtr conn(new TcpConnection(ioLoop,
-											connName,
-											sockfd,
-											localAddr,
-											peerAddr));
-	connecions_[connName] = conn;
-	conn->setConnectionCallback(connectionCallback_);
-	conn->setMessageCallback(messageCallback_);
-	conn->setWriteompleteCallback(writeCompleteCallback_);
-	conn->setCloseCallback(
-		std::bind(&TcpServer::removeConnection,this,_1));//FIXME: unsafe
-	ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished,conn));
-}
-
-void TcpServer::removeConnection(const TcpConnectionPtr& conn)
-{
-	//FIXME:unsafe
-	loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop,this,conn));
-}
-
-void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& conn)
-{
-	loop_->assertInLoopThread();
-	LOG_INFO << "TcpServer::removeConnectionInLoop [" << name_
-			 << "] - connection " << conn->name();
-	size_t n = connections_.erase(conn->name);
-	(void) n;
-	assert(n == 1);
-	EventLoop* ioLoop = conn->getLoop();
-	ioLoop->queueInLoop(
-		std::bind(&TcpConnection::connectDestroyed,conn));
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 }
