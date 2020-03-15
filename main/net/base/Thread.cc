@@ -62,9 +62,9 @@ struct ThreadData
 	void runInThread() 
 	{
 		*tid_ = CurrentThread::tid();
-		tid_ = NULL;
+		tid_ = nullptr;
 		latch_->countDown();
-		latch_ = NULL;
+		latch_ = nullptr;
 
 		CurrentThread::t_threadName = name_.empty() ? "Thread" : name_.c_str();
 		prctl(PR_SET_NAME, CurrentThread::t_threadName);
@@ -79,7 +79,7 @@ void* startThread(void* obj)
 	ThreadData* data = static_cast<ThreadData*>(obj);
 	data->runInThread();
 	delete data;
-	return NULL;
+	return nullptr;
 }
 
 Thread::Thread(const ThreadFunc& func, const string& n)
@@ -114,7 +114,7 @@ void Thread::start()
 	assert(!started_);
 	started_ = true;
 	ThreadData* data = new ThreadData(func_, name_, &tid_, &latch_);
-	if (pthread_create(&pthreadId_, NULL, &startThread, data)) 
+	if (pthread_create(&pthreadId_, nullptr, &startThread, data)) 
 	{
 		started_ = false;
 		delete data;
@@ -131,5 +131,5 @@ int Thread::join()
 	assert(started_);
 	assert(!joined_);
 	joined_ = true;
-	return pthread_join(pthreadId_, NULL);
+	return pthread_join(pthreadId_, nullptr);
 }

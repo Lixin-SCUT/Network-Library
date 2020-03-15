@@ -16,7 +16,7 @@ public:
 	explicit Condition(MutexLock &_mutex) 
 		: mutex(_mutex) 
 	{
-		pthread_cond_init(&cond, NULL);
+		pthread_cond_init(&cond, nullptr);
   	}
   	~Condition() { pthread_cond_destroy(&cond); }
 
