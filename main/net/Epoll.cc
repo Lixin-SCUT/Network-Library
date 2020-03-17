@@ -24,11 +24,11 @@ using namespace std;
 const int EVENTSNUM = 4096;
 const int EPOLLWAIT_TIME = 10000;
 
-typedef shared_ptr<Channel> SP_Channel;
+typedef shared_ptr<Channel> SP_Channel; // 注意这里的channel全部是new然后使用智能指针管理
 
 Epoll::Epoll() 
-	:	epollFd_(epoll_create1(EPOLL_CLOEXEC)), 
-		events_(EVENTSNUM) 
+	: epollFd_(epoll_create1(EPOLL_CLOEXEC)),  // epoll_create1可设置EPOLL_CLOEXEC，用于自动关闭fd
+	  events_(EVENTSNUM) // EVENTSNUM初始化vector的size
 {
 	assert(epollFd_ > 0);
 }
@@ -49,7 +49,7 @@ void Epoll::epoll_add(SP_Channel request, int timeout)
 	event.data.fd = fd;
 	event.events = request->getEvents();
 
-	request->EqualAndUpdateLastEvents();
+	request->EqualAndUpdateLastEvents(); // 全新的channel无需比较直接赋值
 
 	fd2chan_[fd] = request;
 	if (epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) < 0) 
@@ -60,13 +60,15 @@ void Epoll::epoll_add(SP_Channel request, int timeout)
 }
 
 // 修改描述符状态
-void Epoll::epoll_mod(SP_Channel request, int timeout) {
+void Epoll::epoll_mod(SP_Channel request, int timeout) 
+{
 	if (timeout > 0) 
 	{
 		add_timer(request, timeout);
 	}
 	int fd = request->getFd();
-	if (!request->EqualAndUpdateLastEvents()) {
+	if (!request->EqualAndUpdateLastEvents()) // 判断是否有变化
+	{
 		struct epoll_event event;
 		event.data.fd = fd;
 		event.events = request->getEvents();
@@ -79,18 +81,18 @@ void Epoll::epoll_mod(SP_Channel request, int timeout) {
 }
 
 // 从epoll中删除描述符
-void Epoll::epoll_del(SP_Channel request) {
+void Epoll::epoll_del(SP_Channel request) 
+{
 	int fd = request->getFd();
 	struct epoll_event event;
 	event.data.fd = fd;
 	event.events = request->getLastEvents();
-	// event.events = 0;
-	// request->EqualAndUpdateLastEvents()
+
 	if (epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, &event) < 0) 
 	{
 		perror("epoll_del error");
 	}
-	fd2chan_[fd].reset();
+	fd2chan_[fd].reset(); // 递减引用计数，下同
 	fd2http_[fd].reset();
 }
 
@@ -131,15 +133,15 @@ std::vector<SP_Channel> Epoll::getEventsRequest(int events_num)
 
 		if (cur_req) 
 		{
-			cur_req->setRevents(events_[i].events);
-			cur_req->setEvents(0);
+			cur_req->setRevents(events_[i].events); // 把事件赋值给revents
+			cur_req->setEvents(0); // 注意此处设置event算为0
 			// 加入线程池之前将Timer和request分离
-			// cur_req->seperateTimer();
+			// cur_req->SeparateTimer();
 			req_data.push_back(cur_req);
 		} 
 		else 
 		{
-			LOG << "SP cur_req is invalid";
+			LOG << "shared_ptr<Channel> cur_req is invalid";
 		}
 	}
 	return req_data;

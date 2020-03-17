@@ -1,6 +1,7 @@
 // HttpData.cc
 // Created by Lixin on 2020.03.10
 
+
 #include "HttpData.h"
 
 #include "Channel.h"
@@ -13,14 +14,11 @@
 #include <sys/stat.h>
 #include <iostream>
 
-	
-using namespace std;
-
 pthread_once_t MimeType::once_control = PTHREAD_ONCE_INIT;
 std::unordered_map<std::string, std::string> MimeType::mime;
 
-const __uint32_t DEFAULT_EVENT = EPOLLIN | EPOLLET | EPOLLONESHOT;
-const int DEFAULT_EXPIRED_TIME = 2000; / ms
+const __uint32_t DEFAULT_EVENT = EPOLLIN | EPOLLET | EPOLLONESHOT; 
+const int DEFAULT_EXPIRED_TIME = 2000; // ms
 const int DEFAULT_KEEP_ALIVE_TIME = 5 * 60 * 1000; // ms
 
 char favicon[555] = 
@@ -109,18 +107,17 @@ std::string MimeType::getMime(const std::string &suffix)
 
 HttpData::HttpData(EventLoop *loop, int connfd)
 		: loop_(loop),
-		channel_(new Channel(loop, connfd)),
-		fd_(connfd),
-		error_(false),
-		connectionState_(H_CONNECTED),
-		method_(METHOD_GET),
-		HTTPVersion_(HTTP_11),
-		nowReadPos_(0),
-		state_(STATE_PARSE_URI),
-		hState_(H_START),
-		keepAlive_(false) 
+		  channel_(new Channel(loop, connfd)), // 利用已连接的connfd注册新的Channel
+		  fd_(connfd),
+		  error_(false),
+		  connectionState_(H_CONNECTED),
+		  method_(METHOD_GET),
+		  HTTPVersion_(HTTP_11),
+		  nowReadPos_(0),
+		  state_(STATE_PARSE_URI),
+		  hState_(H_START),
+		  keepAlive_(false) 
 {
-	// loop_->queueInLoop(bind(&HttpData::setHandlers, this));
 	channel_->setReadHandler(bind(&HttpData::handleRead, this));
 	channel_->setWriteHandler(bind(&HttpData::handleWrite, this));
 	channel_->setConnHandler(bind(&HttpData::handleConn, this));
@@ -144,9 +141,8 @@ void HttpData::reset()
 	}
 }
 
-void HttpData::seperateTimer()   
+void HttpData::SeparateTimer()   
 {
-	// cout << "seperateTimer" << endl;
 	if (timer_.lock())   
 	{
 		shared_ptr<TimerNode> my_timer(timer_.lock());
@@ -164,10 +160,9 @@ void HttpData::handleRead()
 		LOG << "Request: " << inBuffer_;
 		if (connectionState_ == H_DISCONNECTING)   
 		{
-			inBuffer_.clear();
+			inBuffer_.clear(); // 抛弃所有接收到的数据
 			break;
 		}
-		// cout << inBuffer_ << endl;
 		if (read_num < 0)   
 		{
 			perror("1");
@@ -175,11 +170,6 @@ void HttpData::handleRead()
 			handleError(fd_, 400, "Bad Request");
 			break;
 		}
-		// else if (read_num == 0)
-		// {
-		//		 error_ = true;
-		//		 break;
-		// }
 		else if (zero)   
 		{
 			// 有请求出现但是读不到数据，可能是Request
@@ -275,13 +265,11 @@ void HttpData::handleRead()
 			}
 		}
 	} while (false);
-	// cout << "state_=" << state_ << endl;
 	if (!error_)   
 	{
 		if (outBuffer_.size() > 0)   
 		{
-			handleWrite();
-			// events_ |= EPOLLOUT;
+			handleWrite(); 
 		}
 		// error_ may change
 		if (!error_ && state_ == STATE_FINISH)   
@@ -289,18 +277,12 @@ void HttpData::handleRead()
 			this->reset();
 			if (inBuffer_.size() > 0) 
 			{
-				if (connectionState_ != H_DISCONNECTING) handleRead();
+				// 因为是ET模式，所以必须一直读直到读完
+				if (connectionState_ != H_DISCONNECTING) handleRead(); 
 			}
-
-			// if ((keepAlive_ || inBuffer_.size() > 0) && connectionState_ ==
-			// H_CONNECTED)
-			// {
-			//		 this->reset();
-			//		 events_ |= EPOLLIN;
-			// }
 		}   
 		else if (!error_ && connectionState_ != H_DISCONNECTED)
-		{	events_ |= EPOLLIN; }
+		{	events_ |= EPOLLIN; } // 重新注册事件
 	}
 }
 
@@ -316,16 +298,16 @@ void HttpData::handleWrite()
 			error_ = true;
 		}
 		if (outBuffer_.size() > 0) 
-		{	events_ |= EPOLLOUT; }
+		{	events_ |= EPOLLOUT; } // tcp无法把buffer全部发送，只能继续监听可读事件
 	}
 }
 
 void HttpData::handleConn() {
-	seperateTimer();
+	SeparateTimer();
 	__uint32_t &events_ = channel_->getEvents();
 	if (!error_ && connectionState_ == H_CONNECTED)   
 	{
-		if (events_ != 0)   
+		if (events_ != 0)   // TODO
 		{
 			int timeout = DEFAULT_EXPIRED_TIME;
 			if (keepAlive_) 
@@ -340,7 +322,7 @@ void HttpData::handleConn() {
 			loop_->updatePoller(channel_, timeout);
 
 		}   
-		else if (keepAlive_)   
+		else if (keepAlive_)   // 重置长连接事件
 		{
 			events_ |= (EPOLLIN | EPOLLET);
 			// events_ |= (EPOLLIN | EPOLLET | EPOLLONESHOT);
@@ -349,10 +331,6 @@ void HttpData::handleConn() {
 		}  
 		else  
 		{
-			// cout << "close normally" << endl;
-			// loop_->shutdown(channel_);
-			// loop_->runInLoop(
-				bind(&HttpData::handleClose, shared_from_this()));
 			events_ |= (EPOLLIN | EPOLLET);
 			// events_ |= (EPOLLIN | EPOLLET | EPOLLONESHOT);
 			int timeout = (DEFAULT_KEEP_ALIVE_TIME >> 1);
@@ -363,10 +341,11 @@ void HttpData::handleConn() {
 			&& (events_ & EPOLLOUT))  
 	{
 		events_ = (EPOLLOUT | EPOLLET);
+		loop_->updatePoller(channel_); //TODO
 	}  
 	else  
 	{
-		// cout << "close with errors" << endl;
+		// 出错主动关闭
 		loop_->runInLoop(bind(&HttpData::handleClose, shared_from_this()));
 	}
 }
@@ -719,6 +698,6 @@ void HttpData::handleClose()
 
 void HttpData::newEvent() 
 {
-	channel_->setEvents(DEFAULT_EVENT);
-	loop_->addToPoller(channel_, DEFAULT_EXPIRED_TIME);
+	channel_->setEvents(DEFAULT_EVENT); // 默认为EPOLLONESHOT，避免多个线程执行，因此需要重新注册
+	loop_->addToPoller(channel_, DEFAULT_EXPIRED_TIME); // 把新的连接fd通过channel注册间接传给loop
 }

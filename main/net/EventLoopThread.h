@@ -10,7 +10,8 @@
 #include "base/noncopyable.h"
 
 
-class EventLoopThread : noncopyable {
+class EventLoopThread : noncopyable 
+{
 public:
 	EventLoopThread();
 	~EventLoopThread();

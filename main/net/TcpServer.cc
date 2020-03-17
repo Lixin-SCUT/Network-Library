@@ -1,5 +1,6 @@
 // TcpServer.cc
 // Created by Lixin on 2020.02.19
+// 用于建立服务器端
 
 #include "TcpServer.h"
 
@@ -20,9 +21,9 @@ Server::Server(EventLoop *loop, int threadNum, int port)
 	  port_(port),
 	  listenFd_(socket_bind_listen(port_)) 
 {
-	acceptChannel_->setFd(listenFd_);
-	handle_for_sigpipe();
-	if (setSocketNonBlocking(listenFd_) < 0) 
+	acceptChannel_->setFd(listenFd_); // 设置监听描述符
+	handle_for_sigpipe(); // 忽略SIGPIPE信号，防止对方断开连接继续执行写操作导致服务进程意外退出
+	if (setSocketNonBlocking(listenFd_) < 0) // 设置非阻塞I/O
 	{
 		perror("set socket non block failed");
 		abort();
@@ -31,11 +32,11 @@ Server::Server(EventLoop *loop, int threadNum, int port)
 
 void Server::start() 
 {
-	eventLoopThreadPool_->start();
+	eventLoopThreadPool_->start(); // 启动线程池
 	// acceptChannel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
-	acceptChannel_->setReadHandler(bind(&Server::handNewConn, this));
-	acceptChannel_->setConnHandler(bind(&Server::handThisConn, this));
+	acceptChannel_->setReadHandler(bind(&Server::handNewConn, this)); // 新连接事件
+	acceptChannel_->setConnHandler(bind(&Server::handThisConn, this)); // 更新监听事件（非必须，当使用了ONESHOT的时候必须要）
 	loop_->addToPoller(acceptChannel_, 0);
 	started_ = true;
 }
@@ -50,11 +51,11 @@ void Server::handNewConn()
 				(struct sockaddr *)&client_addr,
 				&client_addr_len)) > 0) 
 	{
-		EventLoop *loop = eventLoopThreadPool_->getNextLoop();
+		EventLoop *loop = eventLoopThreadPool_->getNextLoop(); // 从线程池获得loop
 		LOG << "New connection from " << inet_ntoa(client_addr.sin_addr) << ":"
 			<< ntohs(client_addr.sin_port);
 		
-		// TCP的保活机制默认是关闭的
+		// 当使用HTTP的keepAlive时，TCP的保活机制默认是关闭的，
 		// int optval = 0;
 		// socklen_t len_optval = 4;
 		// getsockopt(accept_fd, SOL_SOCKET,	SO_KEEPALIVE, &optval, &len_optval);
@@ -77,9 +78,9 @@ void Server::handNewConn()
 		setSocketNodelay(accept_fd);
 		// setSocketNoLinger(accept_fd);
 
-		shared_ptr<HttpData> req_info(new HttpData(loop, accept_fd));
-		req_info->getChannel()->setHolder(req_info);
-		loop->queueInLoop(std::bind(&HttpData::newEvent, req_info));
+		shared_ptr<HttpData> req_info(new HttpData(loop, accept_fd)); //新建HttpData对象
+		req_info->getChannel()->setHolder(req_info); // 绑定Channel的HttpData对象
+		loop->queueInLoop(std::bind(&HttpData::newEvent, req_info)); // 跨线程传输已连接套接字connfd
 	}
-	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET); // 设置监听事件
 }

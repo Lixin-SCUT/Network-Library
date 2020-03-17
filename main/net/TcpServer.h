@@ -7,10 +7,12 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "EventLoopThreadPool.h"
+#include "base/noncopyable.h"
 
 #include <memory>
 
-class Server {
+class Server : noncopyable
+{
 public:
 	Server(EventLoop *loop, int threadNum, int port);
 	~Server() {}

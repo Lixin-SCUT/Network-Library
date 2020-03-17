@@ -1,13 +1,10 @@
 // Buffer.cc
 // Created by Lixin on 2020.02.20
 
-#include "main/net/Buffer.h"
+#include "Buffer.h"
 
 #include <errno.h> // for errno
 #include <sys/uio.h> // for readv and iovec
-
-using namespace main;
-using namespace main::net;
 
 const char Buffer::kCRLF = "\r\n";
 

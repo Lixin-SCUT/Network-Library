@@ -1,9 +1,11 @@
 // HttpData.h
 // Created by Lixin on 2020.03.10
+// 这个类主要供于I/O线程，可类比于TcpServer线程之于接受新连接的主线程
 
 #pragma once
 
 #include "Timer.h"
+#include "base/noncopyable.h"
 
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -13,6 +15,7 @@
 #include <string>
 #include <unordered_map>
 
+// 前向声明，简化头文件之间的依赖关系
 class EventLoop;
 class TimerNode;
 class Channel;
@@ -75,24 +78,35 @@ private:
 	static pthread_once_t once_control;
 };
 
-class HttpData : public std::enable_shared_from_this<HttpData> 
+class HttpData : noncopyable,
+		 public std::enable_shared_from_this<HttpData>  // 将this指针变为shared_ptr,主要用于回调函数
 {
 public:
 	HttpData(EventLoop *loop, int connfd);
 	~HttpData() { close(fd_); }
 	void reset();
-	void seperateTimer();
+	void SeparateTimer();
 	void linkTimer(std::shared_ptr<TimerNode> mtimer) 
 	{
-		// shared_ptr重载了bool, 但weak_ptr没有
-		timer_ = mtimer;
+		timer_ = mtimer; // 注意是shared_ptr赋值给weak_ptr
 	}
 	std::shared_ptr<Channel> getChannel()  
-	{	return channel_; }
+	{	return channel_; } // httpData持有channel的shared_ptr
 	EventLoop *getLoop()  
 	{	return loop_; }
-	void handleClose();
-	void newEvent();
+
+	void handleClose(); // 主动关闭
+	void newEvent(); // 把Channel注册给loop
+
+private:
+	void handleRead();
+	void handleWrite();
+	void handleConn();
+	void handleError(int fd, int err_num, std::string short_msg);
+
+	URIState parseURI();
+	HeaderState parseHeaders();
+	AnalysisState analysisRequest();
 
 private:
 	EventLoop *loop_;
@@ -114,11 +128,5 @@ private:
 	std::map<std::string, std::string> headers_;
 	std::weak_ptr<TimerNode> timer_;
 
-	void handleRead();
-	void handleWrite();
-	void handleConn();
-	void handleError(int fd, int err_num, std::string short_msg);
-	URIState parseURI();
-	HeaderState parseHeaders();
-	AnalysisState analysisRequest();
+	
 };

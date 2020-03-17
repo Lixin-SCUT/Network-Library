@@ -16,7 +16,7 @@ extern __thread const char* t_threadName;
 void cacheTid();
 inline int tid() 
 {
-	if (__builtin_expect(t_cachedTid == 0, 0)) 
+	if (t_cachedTid == 0) 
 	{
 		cacheTid();
 	}

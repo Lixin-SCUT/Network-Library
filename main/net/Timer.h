@@ -4,8 +4,8 @@
 #pragma once
 
 #include "HttpData.h"
-#include "base/MutexLock.h"
 #include "base/noncopyable.h"
+#include "base/copyable.h"
 
 #include <unistd.h>
 #include <deque>
@@ -14,12 +14,12 @@
 
 class HttpData;
 	
-class TimerNode 
+class TimerNode : copyable
 {
 public:
 	TimerNode(std::shared_ptr<HttpData> requestData, int timeout);
 	~TimerNode();
-	TimerNode(TimerNode &tn);
+	TimerNode(TimerNode &tn); // 拷贝构造函数
 	void update(int timeout);
 	bool isValid();
 	void clearReq();
@@ -42,7 +42,7 @@ struct TimerCmp
 	}
 };
 
-class TimerManager 
+class TimerManager : noncopyable
 {
 public:
 	TimerManager();
@@ -53,7 +53,6 @@ public:
 private:
 	typedef std::shared_ptr<TimerNode> SPTimerNode;
 	std::priority_queue<SPTimerNode, 
-				std::deque<SPTimerNode>,
-				TimerCmp> timerNodeQueue;
-	// MutexLock lock;
+			    std::deque<SPTimerNode>,
+			    TimerCmp> timerNodeQueue;
 };

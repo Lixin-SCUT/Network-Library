@@ -26,10 +26,8 @@ Channel::Channel(EventLoop *loop, int fd)
 	  lastEvents_(0) 
 { }
 
-Channel::~Channel() {
-	// loop_->poller_->epoll_del(fd, events_);
-	// close(fd_);
-}
+Channel::~Channel() 
+{ }
 
 int Channel::getFd() { return fd_; }
 void Channel::setFd(int fd) { fd_ = fd; }
@@ -37,7 +35,7 @@ void Channel::setFd(int fd) { fd_ = fd; }
 void Channel::handleEvents() 
 {
     	events_ = 0;
-	if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) 
+	if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) // 
 	{
       		events_ = 0;
       		return;
@@ -51,15 +49,15 @@ void Channel::handleEvents()
 		events_ = 0;
       		return;
     	}
-    	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) 
+    	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) // 任一可读事件
 	{
       		handleRead();
     	}
-    	if (revents_ & EPOLLOUT) 
+    	if (revents_ & EPOLLOUT) // 可写事件，buffer未输出完毕需要主动设置
 	{
       		handleWrite();
     	}
-    	handleConn();
+    	handleConn(); // 维护链接，主要为keepAlive长连接
 }
 
 
