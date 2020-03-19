@@ -14,6 +14,8 @@
 #include <sys/stat.h>
 #include <iostream>
 
+using namespace std; // TODO delete
+
 pthread_once_t MimeType::once_control = PTHREAD_ONCE_INIT;
 std::unordered_map<std::string, std::string> MimeType::mime;
 

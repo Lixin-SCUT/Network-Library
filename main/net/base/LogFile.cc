@@ -8,6 +8,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <time.h>
+
+using namespace std; // TODO delete
 	
 LogFile::LogFile(const string& basename, int flushEveryN)
 	: basename_(basename),

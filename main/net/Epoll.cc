@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 
-using namespace std;
+using namespace std; // TODO delete
 
 const int EVENTSNUM = 4096;
 const int EPOLLWAIT_TIME = 10000;

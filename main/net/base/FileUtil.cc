@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+using namespace std; // TODO delete
+
 AppendFile::AppendFile(string filename) 
 	: fp_(fopen(filename.c_str(), "ae")) 
 {

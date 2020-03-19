@@ -17,6 +17,8 @@
 
 #include <iostream>
 
+using namespace std; // TODO delete
+
 namespace CurrentThread 
 {
 __thread int t_cachedTid = 0;
