@@ -1,5 +1,7 @@
 // CountDownLatch.h
 // Created by Lixin on 2020.03.07
+// 一个同步计数器，底层为mutex和condition
+// 通过设置while的条件达到计数器的功能。
 
 #pragma once
 

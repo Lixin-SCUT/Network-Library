@@ -66,7 +66,7 @@ struct ThreadData
 		latch_ = nullptr;
 
 		CurrentThread::t_threadName = name_.empty() ? "Thread" : name_.c_str();
-		prctl(PR_SET_NAME, CurrentThread::t_threadName);
+		prctl(PR_SET_NAME, CurrentThread::t_threadName); // 把参数arg2作为调用进程的经常名字
 
 		func_();
 		CurrentThread::t_threadName = "finished";
@@ -86,16 +86,20 @@ Thread::Thread(const ThreadFunc& func, const string& n)
 	  joined_(false),
 	  pthreadId_(0),
 	  tid_(0),
-	  func_(func),
+	  func_(func), // EventLoopThread::threadFunc
 	  name_(n),
-	  latch_(1) 
+	  latch_(1) // 注意这里设置了countDownLatch同步计数器
+	  // 本质是mutex和condition配合，通过修改while的条件达到计数器效果
 {
 	setDefaultName();
 }
 
 Thread::~Thread() 
 {
-	if (started_ && !joined_) pthread_detach(pthreadId_);
+	if (started_ && !joined_) 
+	{	
+		pthread_detach(pthreadId_); 
+	}
 }
 
 void Thread::setDefaultName() 
@@ -103,7 +107,7 @@ void Thread::setDefaultName()
 	if (name_.empty()) 
 	{
 		char buf[32];
-		snprintf(buf, sizeof buf, "Thread");
+		snprintf(buf, sizeof(buf), "Thread");
 		name_ = buf;
 	}
 }
@@ -112,7 +116,9 @@ void Thread::start()
 {
 	assert(!started_);
 	started_ = true;
-	ThreadData* data = new ThreadData(func_, name_, &tid_, &latch_);
+	ThreadData* data = new ThreadData(func_, name_, &tid_, &latch_); // 不要遗漏 countDownLatch
+	// 注意直到此处才新建线程
+	// 并执行startThread（亦即传入的threadFunc）
 	if (pthread_create(&pthreadId_, nullptr, &startThread, data)) 
 	{
 		started_ = false;

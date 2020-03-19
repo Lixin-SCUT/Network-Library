@@ -33,11 +33,16 @@ private:
 	friend class Condition;
 };
 
+// 利用RAII思想，把mutex包装为类对象
 class MutexLockGuard : noncopyable 
 {
 public:
-	explicit MutexLockGuard(MutexLock &_mutex) : mutex(_mutex) { mutex.lock(); }
-	~MutexLockGuard() { mutex.unlock(); }
+	explicit MutexLockGuard(MutexLock&_mutex) 
+		: mutex(_mutex) 
+	{	mutex.lock(); }
+
+	~MutexLockGuard() 
+	{	mutex.unlock(); }
 
 private:
 	MutexLock &mutex;

@@ -1,5 +1,6 @@
 // Thread.h
 // Created by Lixin on 2020.03.07
+// 新建线程，同时供EventLoopThread和日志线程AsyncLogging使用
 
 #pragma once
 

@@ -9,7 +9,7 @@
 #include "LogFile.h"
 	
 AsyncLogging::AsyncLogging(std::string logFileName_, int flushInterval)
-	: flushInterval_(flushInterval),
+	: flushInterval_(flushInterval), 
 	  running_(false),
 	  basename_(logFileName_),
 	  thread_(std::bind(&AsyncLogging::threadFunc, this), "Logging"),
@@ -36,14 +36,14 @@ void AsyncLogging::append(const char* logline, int len)
 	else 
 	{
 		buffers_.push_back(currentBuffer_);
-		currentBuffer_.reset();
+		currentBuffer_.reset(); // 引用计数-1
 		if (nextBuffer_)
 		{
 			currentBuffer_ = std::move(nextBuffer_);
 		}
 		else
 		{
-			currentBuffer_.reset(new Buffer);
+			currentBuffer_.reset(new Buffer); // 引用计数-1，然后接管新的对象
 		}
 		currentBuffer_->append(logline, len);
 		cond_.notify();
@@ -60,7 +60,7 @@ void AsyncLogging::threadFunc()
 	newBuffer1->bzero();
 	newBuffer2->bzero();
 	BufferVector buffersToWrite;
-	buffersToWrite.reserve(16);
+	buffersToWrite.reserve(16); // TODO vector是否可以自动shrink_to_fit
 	while (running_) 
 	{
 		assert(newBuffer1 && newBuffer1->length() == 0);
@@ -86,6 +86,7 @@ void AsyncLogging::threadFunc()
 
 		assert(!buffersToWrite.empty());
 
+		// LOG积压只能直接抛弃
 		if (buffersToWrite.size() > 25) 
 		{
 			buffersToWrite.erase(buffersToWrite.begin() + 2,
@@ -94,7 +95,6 @@ void AsyncLogging::threadFunc()
 
 		for (size_t i = 0; i < buffersToWrite.size(); ++i) 
 		{
-			// FIXME: use unbuffered stdio FILE ? or use ::writev ?
 			output.append(buffersToWrite[i]->data(), buffersToWrite[i]->length());
 		}
 

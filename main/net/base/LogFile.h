@@ -1,6 +1,6 @@
 // LogFile.h
 // Created by Lixin on 2020.03.08
-
+// LogFile进一步封装了FileUtil，并设置了一个循环次数，每当达到循环次数过就flush
 #pragma once
 
 #include "FileUtil.h"

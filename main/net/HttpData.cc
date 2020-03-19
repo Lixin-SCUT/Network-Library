@@ -123,6 +123,16 @@ HttpData::HttpData(EventLoop *loop, int connfd)
 	channel_->setConnHandler(bind(&HttpData::handleConn, this));
 }
 
+void HttpData::SeparateTimer()  // 与绑定的计时器分离 
+{
+	if (timer_.lock())   
+	{
+		shared_ptr<TimerNode> my_timer(timer_.lock());
+		my_timer->clearReq();
+		timer_.reset();
+	}
+}
+
 void HttpData::reset()   
 {
 	// inBuffer_.clear();
@@ -133,23 +143,10 @@ void HttpData::reset()
 	hState_ = H_START;
 	headers_.clear();
 	// keepAlive_ = false;
-	if (timer_.lock())   
-	{
-		shared_ptr<TimerNode> my_timer(timer_.lock());
-		my_timer->clearReq();
-		timer_.reset();
-	}
+	SeparateTimer();
 }
 
-void HttpData::SeparateTimer()   
-{
-	if (timer_.lock())   
-	{
-		shared_ptr<TimerNode> my_timer(timer_.lock());
-		my_timer->clearReq();
-		timer_.reset();
-	}
-}
+
 
 void HttpData::handleRead()   
 {
@@ -692,7 +689,7 @@ void HttpData::handleError(int fd, int err_num, string short_msg)
 void HttpData::handleClose() 
 {
 	connectionState_ = H_DISCONNECTED;
-	shared_ptr<HttpData> guard(shared_from_this());
+	shared_ptr<HttpData> guard(shared_from_this()); // TODO del
 	loop_->removeFromPoller(channel_);
 }
 

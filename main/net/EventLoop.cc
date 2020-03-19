@@ -122,7 +122,7 @@ void EventLoop::loop()
 		}
 		eventHandling_ = false;
 		doPendingFunctors(); // 日常执行跨线程调用请求
-		poller_->handleExpired();
+		poller_->handleExpired(); // 处理超时事件
 	}
 	looping_ = false;
 }

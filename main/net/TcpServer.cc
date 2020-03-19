@@ -46,39 +46,43 @@ void Server::handNewConn()
 	struct sockaddr_in client_addr;
 	memset(&client_addr, 0, sizeof(struct sockaddr_in));
 	socklen_t client_addr_len = sizeof(client_addr);
-	int accept_fd = 0;
-	while ((accept_fd = accept(listenFd_, 
+	int connfd = 0;
+	while ((connfd = accept(listenFd_, 
 				(struct sockaddr *)&client_addr,
 				&client_addr_len)) > 0) 
 	{
-		EventLoop *loop = eventLoopThreadPool_->getNextLoop(); // 从线程池获得loop
+		
 		LOG << "New connection from " << inet_ntoa(client_addr.sin_addr) << ":"
 			<< ntohs(client_addr.sin_port);
-		
+
+		// 通过soft-limit限制服务器的最大并发连接数
+		if (connfd >= MAXFDS) 
+		{
+			close(connfd);
+			continue;
+			LOG << "But we don't have enough fd now!";
+		}
+
 		// 当使用HTTP的keepAlive时，TCP的保活机制默认是关闭的，
 		// int optval = 0;
 		// socklen_t len_optval = 4;
-		// getsockopt(accept_fd, SOL_SOCKET,	SO_KEEPALIVE, &optval, &len_optval);
-		// cout << "optval ==" << optval << endl;
-		
-		// 限制服务器的最大并发连接数
-		if (accept_fd >= MAXFDS) 
-		{
-			close(accept_fd);
-			continue;
-		}
+		// getsockopt(connfd, SOL_SOCKET,	SO_KEEPALIVE, &optval, &len_optval);
+		// cout << "optval ==" << optval << endl;	
 		// 设为非阻塞模式
-		if (setSocketNonBlocking(accept_fd) < 0) 
+		if (setSocketNonBlocking(connfd) < 0) 
 		{
 			LOG << "Set non block failed!";
 			// perror("Set non block failed!");
 			return;
 		}
-
-		setSocketNodelay(accept_fd);
-		// setSocketNoLinger(accept_fd);
-
-		shared_ptr<HttpData> req_info(new HttpData(loop, accept_fd)); //新建HttpData对象
+		// 关闭nagle算法，避免没必要的等待
+		setSocketNodelay(connfd);
+		// 设置连接关闭条件
+		// setSocketNoLinger(connfd);
+		
+		EventLoop *loop = eventLoopThreadPool_->getNextLoop(); // 从线程池获得loop
+		// 注意要遵守effective C++的建议，直到变量试用前才初始化
+		shared_ptr<HttpData> req_info(new HttpData(loop, connfd)); //新建HttpData对象
 		req_info->getChannel()->setHolder(req_info); // 绑定Channel的HttpData对象
 		loop->queueInLoop(std::bind(&HttpData::newEvent, req_info)); // 跨线程传输已连接套接字connfd
 	}

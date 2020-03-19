@@ -5,7 +5,7 @@
 #include <functional>
 
 EventLoopThread::EventLoopThread()
-	:	loop_(NULL),
+	:	loop_(nullptr),
 		exiting_(false),
 		thread_(bind(&EventLoopThread::threadFunc, this), "EventLoopThread"),
 		mutex_(),
@@ -15,7 +15,7 @@ EventLoopThread::EventLoopThread()
 EventLoopThread::~EventLoopThread() 
 {
 	exiting_ = true;
-	if (loop_ != NULL) 
+	if (loop_ != nullptr) 
 	{
 		loop_->quit();
 		thread_.join();
@@ -25,11 +25,11 @@ EventLoopThread::~EventLoopThread()
 EventLoop* EventLoopThread::startLoop() 
 {
 	assert(!thread_.started());
-	thread_.start();
+	thread_.start(); // 这里会调用传给thread_的threadFunc
 	{
 		MutexLockGuard lock(mutex_);
 		// 一直等到threadFun在Thread里真正跑起来
-		while (loop_ == NULL) 
+		while (nullptr == loop_) 
 		{
 			cond_.wait();
 		}
@@ -47,7 +47,7 @@ void EventLoopThread::threadFunc()
 		cond_.notify();
 	}
 
-	loop.loop();
+	loop.loop(); // 注意此处就启动了线程的事件循环，epoll只注册了wakeupFd
 	// assert(exiting_);
-	loop_ = NULL;
+	loop_ = nullptr; // 记得重置loop_,因为当前loop已经返回给ThreadPool了，不需要保留
 }

@@ -1,5 +1,7 @@
 // LogStream.h
 // Created by Lixin on 2020.03.08
+// LogStream主要用来格式化输出，重载了<<运算符
+// 同时也有一块缓冲区，负责将多个<<的结果连成一块
 
 #pragma once
 
@@ -17,9 +19,11 @@ template <int SIZE>
 class FixedBuffer : noncopyable 
 {
 public:
-	FixedBuffer() : cur_(data_) {}
-
-	~FixedBuffer() {}
+	FixedBuffer() 
+		: cur_(data_) 
+	{ }
+	~FixedBuffer() 
+	{ }
 
 	void append(const char* buf, size_t len) 
 	{
@@ -38,10 +42,10 @@ public:
 	void add(size_t len) { cur_ += len; }
 
 	void reset() { cur_ = data_; }
-	void bzero() { memset(data_, 0, sizeof data_); }
+	void bzero() { memset(data_, 0, sizeof(data_)); }
 
 private:
-	const char* end() const { return data_ + sizeof data_; }
+	const char* end() const { return data_ + sizeof(data_); }
 
 	char data_[SIZE];
 	char* cur_;
@@ -66,16 +70,14 @@ public:
 	LogStream& operator<<(unsigned long);
 	LogStream& operator<<(long long);
 	LogStream& operator<<(unsigned long long);
-
-	LogStream& operator<<(const void*);
-
-	LogStream& operator<<(float v) 
-	{
-		*this << static_cast<double>(v);
-		return *this;
-	}
 	LogStream& operator<<(double);
 	LogStream& operator<<(long double);
+
+	LogStream& operator<<(float f) 
+	{
+		*this << static_cast<double>(f);
+		return *this;
+	}
 
 	LogStream& operator<<(char v) 
 	{
@@ -96,6 +98,12 @@ public:
 		return *this;
 	}
 
+	LogStream& operator<<(const void*)
+	{
+		*this << static_cast<const char*>(v);
+		return *this;
+	}
+
 	LogStream& operator<<(const unsigned char* str) 
 	{
 		return operator<<(reinterpret_cast<const char*>(str));
@@ -112,11 +120,10 @@ public:
 	void resetBuffer() { buffer_.reset(); }
 
 private:
-	void staticCheck();
-
 	template <typename T>
 	void formatInteger(T);
 
+private:
 	Buffer buffer_;
 
 	static const int kMaxNumericSize = 32;

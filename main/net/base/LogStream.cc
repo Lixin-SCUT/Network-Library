@@ -2,6 +2,7 @@
 // Created by Lixin on 2020.03.08
 
 #include "LogStream.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,31 +10,31 @@
 #include <algorithm>
 #include <limits>
 
-const char digits[] = "9876543210123456789";
+const char digits[] = "9876543210123456789"; // 前面9～1是为了应对负数
 const char* zero = digits + 9;
 	
-// From muduo
+// 将数字转化为字符（itoa） 并返回size
 template <typename T>
 size_t convert(char buf[], T value) 
 {
 	T i = value;
-	char* p = buf;
+	char* ptr = buf;
 
 	do 
 	{
 		int lsd = static_cast<int>(i % 10);
 		i /= 10;
-		*p++ = zero[lsd];
+		*ptr++ = zero[lsd];
 	} while (i != 0);
 
 	if (value < 0) 
 	{
-		*p++ = '-';
+		*ptr++ = '-';
 	}
-	*p = '\0';
-	std::reverse(buf, p);
+	*ptr = '\0';
+	std::reverse(buf, ptr);
 
-	return p - buf;
+	return ptr - buf; // 注意为什么不需要+1
 }
 
 template class FixedBuffer<kSmallBuffer>;

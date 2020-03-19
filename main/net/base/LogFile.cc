@@ -16,7 +16,7 @@ LogFile::LogFile(const string& basename, int flushEveryN)
 	  mutex_(new MutexLock) 
 {
 	// assert(basename.find('/') >= 0);
-	file_.reset(new AppendFile(basename));
+	file_.reset(new AppendFile(basename)); // AppendFile负责打开文件并设置缓冲区
 }
 
 LogFile::~LogFile() 
@@ -41,6 +41,6 @@ void LogFile::append_unlocked(const char* logline, int len)
 	if (count_ >= flushEveryN_) 
 	{
 		count_ = 0;
-		file_->flush();
+		file_->flush(); // 满足写入次数后将buffer直接flush到file中
 	}
 }

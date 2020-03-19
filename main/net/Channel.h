@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "Timer.h"
 #include "base/noncopyable.h"
 
 #include <sys/epoll.h>
