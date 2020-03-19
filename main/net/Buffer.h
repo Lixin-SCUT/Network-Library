@@ -28,7 +28,6 @@ public:
 		assert(prependableBytes() == kCheapPrepend);
 	}
 
-	// implicit copy-ctor, move-ctor, dtor and assignment are fine
 
 	void swap(Buffer& rhs)
 	{
@@ -51,18 +50,16 @@ public:
 
 	const char* findCRLF() const
 	{
-		//FIXME: replace with memmem()?
 		const char *crlf = std::search(peek(),beginWrite(),kCRLF,kCRLF+2);
-		return crlf == beginWrite() ? NULL : crlf;
+		return crlf == beginWrite() ? nullptr : crlf;
 	}
 
 	const char* findCRLF(const char* start) const
 	{
 		assert(peek() <= start);
 		assert(start <= beginwrite());
-		//FIXME: replace with memmem()?
 		const char *crlf = std::search(start,beginWrite(),kCRLF,kCRLF+2);
-		return crlf == beginWrite() ? NULL : crlf;
+		return crlf == beginWrite() ? nullptr : crlf;
 	}
 
 	const char* findEOL() const
@@ -194,21 +191,21 @@ public:
 	// Append int64_t using network endian
 	void appendInt64(int64_t x)
 	{
-		int64_t be64 = sockets::hostToNetwork64(x);
+		int64_t be64 = htobe64(host64);
 		append(&be64,sizeof(be64));
 	}
 
 	// Append int32_t using network endian
 	void appendInt32(int32_t x)
 	{
-		int32_t be32 = sockets::hostToNetwork32(x);
+		int32_t be32 = htobe32(host32);
 		append(&be32,sizeof(be32));
 	}
 
 	// Append int16_t using network endian
 	void appendInt16(int16_t x)
 	{
-		int16_t be16 = sockets::hostToNetwork16(x);
+		int16_t be16 = htobe16(host16);
 		append(&be16,sizeof(be16));
 	}
 
@@ -256,7 +253,7 @@ public:
 		assert(readableBytes() >= sizeof(int64_t));
 		int64_t be64 = 0;
 		::memcpy(&be64,peek(),sizeof(be64));
-		return sockets::networkToHost64(be64);
+		return htobe64(be64);
 	}
 
  	int32_t peekInt32() const
@@ -264,7 +261,7 @@ public:
     	assert(readableBytes() >= sizeof(int32_t));
    		int32_t be32 = 0;
     	::memcpy(&be32, peek(), sizeof(be32));
-    	return sockets::networkToHost32(be32);
+    	return htobe32(be32);
 	}
 
   	int16_t peekInt16() const
@@ -272,7 +269,7 @@ public:
     	assert(readableBytes() >= sizeof(int16_t));
     	int16_t be16 = 0;
     	::memcpy(&be16, peek(), sizeof(be16));
-    	return sockets::networkToHost16(be16);
+    	return htobe16(be16);
   	}
 
  	int8_t peekInt8() const
@@ -285,19 +282,19 @@ public:
 	// Prepend int64_t using network endian
 	void prependInt64(int64_t x)
 	{
-		int64_t be64 = socket::hostToNetwork64(x);
+		int64_t be64 = htobe64(x);
 		prepend(&be64,sizeof(be64));
 	}
 
   	void prependInt32(int32_t x)
   	{
-    	int32_t be32 = sockets::hostToNetwork32(x);
+    	int32_t be32 = htobe32(x);
     	prepend(&be32, sizeof(be32));
   	}
 
   	void prependInt16(int16_t x)
   	{
-    	int16_t be16 = sockets::hostToNetwork16(x);
+    	int16_t be16 = htobe16(x);
     	prepend(&be16, sizeof(be16));
   	}
 

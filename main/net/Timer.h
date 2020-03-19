@@ -14,7 +14,7 @@
 
 class HttpData;
 	
-class TimerNode : copyable
+class TimerNode : public copyable
 {
 public:
 	TimerNode(std::shared_ptr<HttpData> requestData, int timeout);
