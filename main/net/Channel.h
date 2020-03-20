@@ -15,10 +15,11 @@
 class EventLoop;
 class HttpData;
 
-typedef std::shared_ptr<Channel> SP_Channel;
 
 class Channel : noncopyable
 {
+
+	typedef std::function<void()> CallBack;
 
 public:
 	Channel(EventLoop *loop);
@@ -78,7 +79,6 @@ private:
 	CallBack errorHandler_;
 	CallBack connHandler_;
 
-	typedef std::function<void()> CallBack;
 	EventLoop *loop_;
 	int fd_;
 	__uint32_t events_; // 记录监听事件
@@ -89,4 +89,4 @@ private:
 	std::weak_ptr<HttpData> holder_;
 };
 
-
+typedef std::shared_ptr<Channel> SP_Channel;
