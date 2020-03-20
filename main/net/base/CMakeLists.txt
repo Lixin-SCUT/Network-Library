@@ -1,7 +1,7 @@
 set(LIB_SRC
     AsyncLogging.cc
     CountDownLatch.cc
-    FileUtifl.cc
+    FileUtil.cc
     LogFile.cc
     Logging.cc
     LogStream.cc
