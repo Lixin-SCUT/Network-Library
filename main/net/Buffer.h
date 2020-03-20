@@ -67,7 +67,7 @@ public:
 
 	const char* findEOL() const
 	{
-		const void* eol = memchr(peek(),'\n',reabableBytes());
+		const void* eol = memchr(peek(),'\n',readableBytes());
 		return static_cast<const char*>(eol);
 	}
 
@@ -75,7 +75,7 @@ public:
 	{
 		assert(peek() <= start);
 		assert(start <= beginWrite());	
-		const void* eol = memchr(peek(),'\n',reabldeBytes());
+		const void* eol = memchr(peek(),'\n',readableBytes());
 		return static_cast<const char*>(eol);
 	}
 
@@ -143,7 +143,7 @@ public:
 
 	string tostring() const
 	{
-		return string(Peek(),static_cast<int>(readableBytes()));
+		return string(peek(),static_cast<int>(readableBytes()));
 	}
 
 	void append(const string& str)
@@ -187,7 +187,7 @@ public:
 
 	void unwrite(size_t len)
 	{
-		assert(len <= readableByte());
+		assert(len <= readableBytes());
 		writerIndex_ -= len;
 	}
 
@@ -318,7 +318,7 @@ public:
 	{
 		// FIXME:use vector::shrink_to_fit() in C++11 if possible
 		Buffer other;
-		other.ensureWritableBytes(readableBytes + reverse);
+		other.ensureWritableBytes(readableBytes() + reverse);
 		other.append(tostring());
 		swap(other); // 'this' is another parameter unshown
 	}
