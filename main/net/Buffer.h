@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <string.h>
 
+using std::string;
+using std::vector;
 
 class Buffer : public copyable
 {
@@ -25,7 +27,7 @@ public:
 		  writerIndex_(kCheapPrepend)
 	{
 		assert(readableBytes() == 0);
-		assert(writableBytes() == initialSize);
+		assert(writeableBytes() == initialSize);
 		assert(prependableBytes() == kCheapPrepend);
 	}
 
@@ -40,7 +42,7 @@ public:
 	size_t readableBytes() const
 	{ return writerIndex_ - readerIndex_; }
 
-	size_t writableBytes() const
+	size_t writeableBytes() const
 	{ return buffer_.size() - writerIndex_; }
 
 	size_t prependableBytes() const
@@ -164,11 +166,11 @@ public:
 
 	void ensureWritableBytes(size_t len)
 	{
-		if(writableBytes() < len)
+		if(writeableBytes() < len)
 		{
 			makeSpace(len);
 		}
-		assert(writableBytes() >= len);
+		assert(writeableBytes() >= len);
 	}
 
 	char* beginWrite()
@@ -179,7 +181,7 @@ public:
 
 	void hasWritten(size_t len)
 	{
-		assert(len <= writableBytes());
+		assert(len <= writeableBytes());
 		writerIndex_ += len;
 	}
 
