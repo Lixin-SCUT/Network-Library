@@ -6,7 +6,7 @@
 #include <errno.h> // for errno
 #include <sys/uio.h> // for readv and iovec
 
-const char Buffer::kCRLF = "\r\n";
+const char Buffer::kCRLF[] = "\r\n";
 
 const size_t Buffer::kCheapPrepend;
 const size_t Buffer::kInitialSize;
@@ -23,7 +23,7 @@ ssize_t Buffer::readFd(int fd, int* savedErrno)
 
 	// 只有主buffer被用完后才使用extrabuffer
 	const int iovcnt = (writable < sizeof(extrabuf)? 2 : 1);
-	const ssize_t readv(fd,vec,iovcnt);
+	const ssize_t n = readv(fd, vec, iovcnt);
 	if(n < 0)
 	{
 		*savedErrno = errno;

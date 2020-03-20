@@ -98,7 +98,7 @@ public:
 		return *this;
 	}
 
-	LogStream& operator<<(const void*)
+	LogStream& operator<<(const void* v)
 	{
 		*this << static_cast<const char*>(v);
 		return *this;

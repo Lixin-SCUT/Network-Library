@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <string>
 
 #include <assert.h>
 #include <string.h>
@@ -19,7 +20,7 @@ public:
 	static const size_t kInitialSize = 1024;
 
 	explicit Buffer(size_t initialSize = kInitialSize)
-		: buffer_(kCHeapPrepend + initialSize),
+		: buffer_(kCheapPrepend + initialSize),
 		  readerIndex_(kCheapPrepend),
 		  writerIndex_(kCheapPrepend)
 	{
@@ -32,18 +33,18 @@ public:
 	void swap(Buffer& rhs)
 	{
 		buffer_.swap(rhs.buffer_);
-		std::swap(readerIndex_,rhs_readerIndex_);
-		std::swap(writerIndex_,rhs_writerIndex_);
+		std::swap(readerIndex_,rhs.readerIndex_);
+		std::swap(writerIndex_,rhs.writerIndex_);
 	}
 
 	size_t readableBytes() const
 	{ return writerIndex_ - readerIndex_; }
 
 	size_t writableBytes() const
-	{ return buffer.size() - writerIndex_; }
+	{ return buffer_.size() - writerIndex_; }
 
 	size_t prependableBytes() const
-	{ return readerIndex; }
+	{ return readerIndex_; }
 
 	const char* peek() const
 	{ return begin() + readerIndex_; }
@@ -57,21 +58,21 @@ public:
 	const char* findCRLF(const char* start) const
 	{
 		assert(peek() <= start);
-		assert(start <= beginwrite());
+		assert(start <= beginWrite());
 		const char *crlf = std::search(start,beginWrite(),kCRLF,kCRLF+2);
 		return crlf == beginWrite() ? nullptr : crlf;
 	}
 
 	const char* findEOL() const
 	{
-		const void* eol = memchr(peek(),'\n',reabldeBytes());
+		const void* eol = memchr(peek(),'\n',reabableBytes());
 		return static_cast<const char*>(eol);
 	}
 
 	const char* findEOL(const char* start) const
 	{
 		assert(peek() <= start);
-		assert(start <= beginwrite());	
+		assert(start <= beginWrite());	
 		const void* eol = memchr(peek(),'\n',reabldeBytes());
 		return static_cast<const char*>(eol);
 	}
@@ -148,7 +149,7 @@ public:
 		append(str.data(),str.size());
 	}
 
-	void append(const char* /*retrict*/ data,size_t len)
+	void append(const char*  data,size_t len)
 	{
 		ensureWritableBytes(len);
 		std::copy(data,data+len,beginWrite());
@@ -171,10 +172,10 @@ public:
 	}
 
 	char* beginWrite()
-	{ return begin()+writeIndex_; }
+	{ return begin()+writerIndex_; }
 	
 	const char* beginWrite() const
-	{ return begin()+writeIndex_; }a
+	{ return begin()+writerIndex_; }
 
 	void hasWritten(size_t len)
 	{
@@ -191,21 +192,21 @@ public:
 	// Append int64_t using network endian
 	void appendInt64(int64_t x)
 	{
-		int64_t be64 = htobe64(host64);
+		int64_t be64 = htobe64(x);
 		append(&be64,sizeof(be64));
 	}
 
 	// Append int32_t using network endian
 	void appendInt32(int32_t x)
 	{
-		int32_t be32 = htobe32(host32);
+		int32_t be32 = htobe32(x);
 		append(&be32,sizeof(be32));
 	}
 
 	// Append int16_t using network endian
 	void appendInt16(int16_t x)
 	{
-		int16_t be16 = htobe16(host16);
+		int16_t be16 = htobe16(x);
 		append(&be16,sizeof(be16));
 	}
 
@@ -303,11 +304,11 @@ public:
     	prepend(&x, sizeof(x));
   	}
 
-	void prepend(const void* /*restrict*/ data, size_t len)
+	void prepend(const void* data, size_t len)
 	{
 		assert(len <= prependableBytes());
 		readerIndex_ -= len;
-		const char* d = static_cast<const char*>(char);
+		const char* d = static_cast<const char*>(data);
 		std::copy(d,d+len,begin+readerIndex_);
 	}
 
@@ -315,7 +316,7 @@ public:
 	{
 		// FIXME:use vector::shrink_to_fit() in C++11 if possible
 		Buffer other;
-		other.ensureWritableBytes(reableBytes + reverse);
+		other.ensureWritableBytes(readableBytes + reverse);
 		other.append(tostring());
 		swap(other); // 'this' is another parameter unshown
 	}
@@ -338,7 +339,7 @@ private:
 
 	void makeSpace(size_t len)
 	{
-		if(writableBytes() + prependBytes() < len + kCheapPrepend)
+		if(writeableBytes() + prependableBytes() < len + kCheapPrepend)
 		{
 			// FIXME: move readable data
 			buffer_.resize(writerIndex_+len);
