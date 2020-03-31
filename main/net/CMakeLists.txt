@@ -19,4 +19,3 @@ target_link_libraries(NetworkLibrary libserver_base)
 
 
 add_subdirectory(base)
-add_subdirectory(examples)
