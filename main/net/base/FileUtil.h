@@ -9,7 +9,8 @@
 	
 #include <string>
 
-class AppendFile : noncopyable {
+class AppendFile : noncopyable 
+{
 public:
 	explicit AppendFile(std::string filename);
 	~AppendFile();

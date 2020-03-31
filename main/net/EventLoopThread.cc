@@ -5,11 +5,11 @@
 #include <functional>
 
 EventLoopThread::EventLoopThread()
-	:	loop_(nullptr),
-		exiting_(false),
-		thread_(bind(&EventLoopThread::threadFunc, this), "EventLoopThread"),
-		mutex_(),
-		cond_(mutex_) 
+	:  loop_(nullptr),
+	   exiting_(false),
+	   thread_(bind(&EventLoopThread::threadFunc, this), "EventLoopThread"),
+	   mutex_(),
+	   cond_(mutex_) 
 { }
 
 EventLoopThread::~EventLoopThread() 
@@ -28,7 +28,7 @@ EventLoop* EventLoopThread::startLoop()
 	thread_.start(); // 这里会调用传给thread_的threadFunc
 	{
 		MutexLockGuard lock(mutex_);
-		// 一直等到threadFun在Thread里真正跑起来
+		// 一直等到threadFunc在Thread里真正跑起来
 		while (nullptr == loop_) 
 		{
 			cond_.wait();
