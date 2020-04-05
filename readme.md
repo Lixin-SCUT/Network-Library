@@ -59,10 +59,10 @@
 
  * 测试结果
    1. 单线程 + 短连接
-![WebBench](https://github.com/Lixin-SCUT/Network-Library/tree/master/test/resultImage/single+short.tiff)
+![WebBench](https://github.com/Lixin-SCUT/Network-Library/blob/master/test/resultImage/single%2Bshort.jpg)
    2. 单线程 + 长连接
-![WebBench](https://github.com/Lixin-SCUT/Network-Library/tree/master/test/resultImage/single+keepalive.tiff)
+![WebBench](https://github.com/Lixin-SCUT/Network-Library/blob/master/test/resultImage/single%2Bkeepalive.jpg)
    3. 多线程 + 短连接
-![WebBench](https://github.com/Lixin-SCUT/Network-Library/tree/master/test/resultImage/multi+short.tiff)
+![WebBench](https://github.com/Lixin-SCUT/Network-Library/blob/master/test/resultImage/multi%2Bshort.jpg)
    4. 多线程 + 长连接
-![WebBench](https://github.com/Lixin-SCUT/Network-Library/tree/master/test/resultImage/multi+keepalive.tiff)
+![WebBench](https://github.com/Lixin-SCUT/Network-Library/blob/master/test/resultImage/multi%2Bkeepalive.jpg)
