@@ -171,8 +171,8 @@ void HttpData::handleRead()
 		}
 		else if (zero)   
 		{
-			// 有请求出现但是读不到数据，可能是Request
-			// Aborted，或者来自网络的数据没有达到等原因
+			// 有请求出现但是读不到数据，可能是Request Aborted，
+			// 或者来自网络的数据没有达到等原因
 			// 最可能是对端已经关闭了，统一按照对端已经关闭处理
 			// error_ = true;
 			connectionState_ = H_DISCONNECTING;
@@ -277,7 +277,10 @@ void HttpData::handleRead()
 			if (inBuffer_.size() > 0) 
 			{
 				// 因为是ET模式，所以必须一直读直到读完
-				if (connectionState_ != H_DISCONNECTING) handleRead(); 
+				if (connectionState_ != H_DISCONNECTING) 
+				{
+					handleRead();
+				} 
 			}
 		}   
 		else if (!error_ && connectionState_ != H_DISCONNECTED)
