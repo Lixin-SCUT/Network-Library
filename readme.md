@@ -78,3 +78,7 @@
 ![WebBench](https://github.com/Lixin-SCUT/Network-Library/blob/master/test/resultImage/multi%2Bshort.jpg)
    4. 多线程 + 长连接
 ![WebBench](https://github.com/Lixin-SCUT/Network-Library/blob/master/test/resultImage/multi%2Bkeepalive.jpg)
+
+### 事件记录
+04.17：重构了双缓冲的异步日志系统LOG。
+04.19: 重构了定时器，修改原来的简易最大堆定时器，使用数组+链表数据结构为主体的时间轮。
