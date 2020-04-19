@@ -1,17 +1,20 @@
-// noncopyable.h
-// Created by Lixin on 2020.03.05
+//
+// Created by 黎鑫 on 2020/4/16.
+//
 
-#pragma once
+#ifndef MYPROJECT_NONCOPYABLE_H
+#define MYPROJECT_NONCOPYABLE_H
 
 class noncopyable
 {
 public:
-	noncopyable(const noncopyable&) = delete;
-	noncopyable& operator=(const noncopyable&) = delete;
+
+    noncopyable(const noncopyable&) = delete;
+    noncopyable& operator=(const noncopyable&) = delete;
 
 protected:
-	noncopyable() = default;
-	~noncopyable() = default;
+    noncopyable() = default;
+    ~noncopyable() = default;
 };
 
-
+#endif //MYPROJECT_NONCOPYABLE_H

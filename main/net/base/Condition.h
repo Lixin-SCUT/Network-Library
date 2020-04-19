@@ -1,38 +1,45 @@
-// Condition.h
-// Created by Lixin on 2020.03.06
+//
+// Created by 黎鑫 on 2020/4/16.
+//
 
-#pragma once
+#ifndef MYPROJECT_CONDITION_H
+#define MYPROJECT_CONDITION_H
 
-#include "MutexLock.h"
 #include "noncopyable.h"
+#include "MutexLock.h"
 
+#include <sys/_pthread/_pthread_cond_t.h>
 #include <errno.h>
-#include <pthread.h>
-#include <time.h>
-#include <cstdint>
 
-class Condition : noncopyable {
+
+
+class Condtion : noncopyable
+{
 public:
-	explicit Condition(MutexLock &_mutex) 
-		: mutex(_mutex) 
-	{
-		pthread_cond_init(&cond, nullptr);
-  	}
-  	~Condition() { pthread_cond_destroy(&cond); }
+    explicit Condtion(MutexLock& mutex)
+        : mutex_(mutex)
+    { pthread_cond_init(&cond_, nullptr); }
 
-  	void wait() { pthread_cond_wait(&cond, mutex.get()); }
-  	void notify() { pthread_cond_signal(&cond); }
-  	void notifyAll() { pthread_cond_broadcast(&cond); }
-  	
-	bool waitForSeconds(int seconds) 
-	{
-		struct timespec abstime;
-		clock_gettime(CLOCK_REALTIME, &abstime);
-    		abstime.tv_sec += static_cast<time_t>(seconds);
-    		return ETIMEDOUT == pthread_cond_timedwait(&cond, mutex.get(), &abstime);
- 	 }
+    ~Condtion() { pthread_cond_destroy(&cond_); }
+
+    void Wait() { pthread_cond_wait(&cond_, mutex_.get()); }
+
+    bool TimedWait(int seconds)
+    {
+        struct timespec tsp;
+        clock_gettime(CLOCK_REALTIME, &tsp);
+        tsp.tv_sec += static_cast<time_t>(seconds);
+        int n = pthread_cond_timedwait(&cond_, mutex_.get(), &tsp);
+        return n == ETIMEDOUT;
+    }
+
+    void Notify() { pthread_cond_signal(&cond_); }
+    void NotifyAll() { pthread_cond_broadcast(&cond_); }
+
 
 private:
-  	MutexLock &mutex;
-  	pthread_cond_t cond;
+    pthread_cond_t cond_;
+    MutexLock& mutex_;
 };
+
+#endif //MYPROJECT_CONDITION_H

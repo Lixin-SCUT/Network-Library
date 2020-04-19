@@ -1,15 +1,17 @@
-// copyable.h
-// Created by Lixin on 2020.03.05
+//
+// Created by 黎鑫 on 2020/4/16.
+//
 
-#pragma once
+#ifndef MYPROJECT_COPYABLE_H
+#define MYPROJECT_COPYABLE_H
 
 class copyable
 {
+public:
+
 protected:
-	copyable() = default;
-	~copyable() = default;
+    copyable() = default;
+    ~copyable() = default;
 };
 
-
-
-
+#endif //MYPROJECT_COPYABLE_H
