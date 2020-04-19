@@ -1,58 +1,38 @@
-// Timer.h
-// Created by Lixin on 2020.02.20
+//
+// Created by 黎鑫 on 2020/4/19.
+//
 
-#pragma once
+#ifndef MYPROJECT_TIMER_H
+#define MYPROJECT_TIMER_H
 
-#include "HttpData.h"
+#include <functional>
 #include "base/noncopyable.h"
-#include "base/copyable.h"
 
-#include <unistd.h>
-#include <deque>
-#include <memory>
-#include <queue>
-
-class HttpData;
-	
-class TimerNode : public copyable
+class Timer : noncopyable
 {
 public:
-	TimerNode(std::shared_ptr<HttpData> requestData, int timeout);
-	~TimerNode();
-	TimerNode(TimerNode &tn); // 拷贝构造函数
-	void update(int timeout);
-	bool isValid();
-	void clearReq();
-	void setDeleted() { deleted_ = true; }
-	bool isDeleted() const { return deleted_; }
-	size_t getExpTime() const { return expiredTime_; }
+    typedef std::function<void()> CallBack;
+    enum TimerType{ONCE, REPEAT};
+
+    Timer(TimerType type, int timeout, CallBack time_callback);
+    ~Timer();
+
+    void Start();
+    void Stop();
+
+    void Adjust(TimerType type, int timeout, CallBack time_callback);
+
+    int timeslot_;
+    int rotation_;
+
+    TimerType type_;
+    int timeout_;
+    CallBack time_callback_;
+
+    Timer* prev_;
+    Timer* next_;
 
 private:
-	bool deleted_;
-	size_t expiredTime_;
-	std::shared_ptr<HttpData> SPHttpData;
-};
 
-struct TimerCmp 
-{
-	bool operator()(std::shared_ptr<TimerNode> &a,
-			std::shared_ptr<TimerNode> &b) const 
-	{
-		return a->getExpTime() > b->getExpTime();
-	}
 };
-
-class TimerManager : noncopyable
-{
-public:
-	TimerManager();
-	~TimerManager();
-	void addTimer(std::shared_ptr<HttpData> SPHttpData, int timeout);
-	void handleExpiredEvent();
-
-private:
-	typedef std::shared_ptr<TimerNode> SPTimerNode;
-	std::priority_queue<SPTimerNode, 
-			    std::deque<SPTimerNode>,
-			    TimerCmp> timerNodeQueue;
-};
+#endif //MYPROJECT_TIMER_H
