@@ -1,92 +1,43 @@
-// Channel.h
-// Created by Lixin on 2020.02.14
+//
+// Created by 黎鑫 on 2020/4/20.
+//
 
-#pragma once
+#ifndef MYPROJECT_CHANNEL_H
+#define MYPROJECT_CHANNEL_H
 
-#include "base/noncopyable.h"
-
-#include <sys/epoll.h>
+#include <cstdint>
 #include <functional>
-#include <memory>
-#include <string>
-#include <unordered_map>
-
-	
-class EventLoop;
-class HttpData;
-
+#include "base/noncopyable.h"
 
 class Channel : noncopyable
 {
-
-	typedef std::function<void()> CallBack;
-
 public:
-	Channel(EventLoop *loop);
-	Channel(EventLoop *loop, int fd);
-	~Channel();
-	int getFd();
-	void setFd(int fd);
+    typedef std::function<void()> CallBack;
 
-	void setHolder(std::shared_ptr<HttpData> holder) 
-	{	holder_ = holder; } // 注意这里是把shared_ptr赋值给weak_ptr,不会引发引用计数递增
-	std::shared_ptr<HttpData> getHolder() 
-	{
-		if(holder_.lock() == nullptr) // 先进行提升，防止shared_ptr已经白给
-		{	abort(); }
-		std::shared_ptr<HttpData> ret(holder_.lock());
-		return ret;	
-	}
+    Channel();
 
-	void setReadHandler(CallBack && readHandler) 
-	{	readHandler_ = readHandler; }
-	void setWriteHandler(CallBack && writeHandler) 
-	{	writeHandler_ = writeHandler; }
-	void setErrorHandler(CallBack && errorHandler) 
-	{	errorHandler_ = errorHandler; }
-	void setConnHandler(CallBack &&	connHandler) 
-	{	connHandler_ = connHandler; }
 
-	void handleEvents(); 
+    int GetFd() const { return fd_; }
+    void SetFd(int fd) {  fd_ = fd; }
 
-	void handleRead();
-	void handleWrite();
-	void handleError(int fd, int err_num, std::string short_msg);
-	void handleConn();
+    uint32_t GetEvents() const { return events_; }
+    void SetEvent(uint32_t events) { events_ = events; }
 
-	void setRevents(__uint32_t ev) 
-	{	revents_ = ev; }
+    void SetReadCallBack(CallBack cb) { readable_callback_ = cb; }
+    void SetWritableCallBack(CallBack cb) { writable_callback_ = cb; }
+    void SetErrorCallBack(CallBack cb) { error_callback_ = cb; }
+    void SetClosedCallBack(CallBack cb) { closed_callback_ = cb; }
 
-	void setEvents(__uint32_t ev) 
-	{	events_ = ev; }
-	__uint32_t &getEvents() 
-	{	return events_; }
-
-	bool EqualAndUpdateLastEvents() 
-	{
-		bool ret = (lastEvents_ == events_);
-		lastEvents_ = events_; // 注意这里的组合使得该函数可用于赋新值
-		return ret;
-	}
-
-	__uint32_t getLastEvents() 
-	{	return lastEvents_; }
-
+    void HandleEvents();
 
 private:
-	CallBack readHandler_;
-	CallBack writeHandler_;
-	CallBack errorHandler_;
-	CallBack connHandler_;
+    int fd_;
+    uint32_t events_;
+    CallBack readable_callback_;
+    CallBack writable_callback_;
+    CallBack error_callback_;
+    CallBack closed_callback_;
 
-	EventLoop *loop_;
-	int fd_;
-	__uint32_t events_; // 记录监听事件
-	__uint32_t revents_; // 记录响应事件
-	__uint32_t lastEvents_; // 记录上一次监听事件
-
-	// 方便找到上层持有该Channel的对象
-	std::weak_ptr<HttpData> holder_;
 };
 
-typedef std::shared_ptr<Channel> SP_Channel;
+#endif //MYPROJECT_CHANNEL_H
