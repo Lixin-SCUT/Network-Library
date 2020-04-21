@@ -1,30 +1,29 @@
-// EventLoopThreadPool.h
-// Created by Lixin on 2020.03.07
+//
+// Created by 黎鑫 on 2020/4/21.
+//
 
-#pragma once
+#ifndef MYPROJECT_EVENTLOOPTHREADPOOL_H
+#define MYPROJECT_EVENTLOOPTHREADPOOL_H
 
-#include "EventLoopThread.h"
-#include "base/Logging.h"
 #include "base/noncopyable.h"
+#include "EventLoopThread.h"
 
-#include <memory>
-#include <vector>
-
-class EventLoopThreadPool : noncopyable 
+const int kThreadNum = 8;
+class EventLoopThreadPool : noncopyable
 {
 public:
-	EventLoopThreadPool(EventLoop* baseLoop, int numThreads);
+    EventLoopThreadPool(EventLoop* main_loop_, int thread_num = 0);
+    ~EventLoopThreadPool();
 
-	~EventLoopThreadPool() { LOG << "~EventLoopThreadPool()"; }
-	void start();
+    EventLoop* GetNextLoop();
 
-	EventLoop* getNextLoop();
+    void StartThread();
 
 private:
-	EventLoop* baseLoop_;
-	bool started_;
-	int numThreads_;
-	int next_;
-	std::vector<std::shared_ptr<EventLoopThread>> threads_;
-	std::vector<EventLoop*> loops_;
+    EventLoop* main_loop_;
+    int thread_num_;
+    int index_;
+
+    vector<EventLoopThread*> thread_list_;
 };
+#endif //MYPROJECT_EVENTLOOPTHREADPOOL_H

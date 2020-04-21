@@ -1,71 +1,55 @@
-// EventLoop.h
-// Created by Lixin on 2020.02.11
+//
+// Created by 黎鑫 on 2020/4/21.
+//
 
-#pragma once 
+#ifndef MYPROJECT_EVENTLOOP_H
+#define MYPROJECT_EVENTLOOP_H
 
+
+#include "Poller.h"
 #include "Channel.h"
-#include "Epoll.h"
-#include "Util.h"
-#include "base/CurrentThread.h"
-#include "base/Logging.h"
-#include "base/Thread.h"
-#include "base/noncopyable.h"
+#include "base/MutexLock.h"
 
-#include <functional>
-#include <memory>
-#include <vector>
+#include<thread>
 
-#include <iostream>
-
-using namespace std; // TODO delete
-
+using std::thread;
 class EventLoop : noncopyable
 {
 public:
-	typedef std::function<void()> Functor; // 必须有确定的函数类型
-  	
-	EventLoop();
-  	~EventLoop();
-  	
-	void loop();
-  	void quit();
-  	
-	void runInLoop(Functor&& cb);
-  	void queueInLoop(Functor&& cb);
-  	
-	bool isInLoopThread() const 
-	{	return threadId_ == CurrentThread::tid(); } // 获取tid
-  	void assertInLoopThread() 
-	{	assert(isInLoopThread()); }
-  	
-	void shutdown(shared_ptr<Channel> channel) 
-	{	shutDownWR(channel->getFd()); } // 仅关闭写端
+    typedef std::function<void()> Functor;
 
-	void removeFromPoller(shared_ptr<Channel> channel) 
-	{	poller_->epoll_del(channel);}
-  	void updatePoller(shared_ptr<Channel> channel, int timeout = 0) 
-	{	poller_->epoll_mod(channel, timeout); }
-  	void addToPoller(shared_ptr<Channel> channel, int timeout = 0) 
-	{	poller_->epoll_add(channel, timeout); }
+    EventLoop();
+    ~EventLoop();
+
+    void AddToPoller(Channel* channel)
+    {   poller_.AddChannel(channel); }
+    void RemovePoller(Channel* channel)
+    {   poller_.RemoveChannel(channel); }
+    void UpdatePoller(Channel* channel)
+    {   poller_.UpdateChannel(channel); }
+
+    void Loop();
+    void HandleRead();
+    void HandleError();
+
+    void QueueInLoop(Functor cb);
+    void WakeUp();
+    void HandleFunctor();
+
+    thread::id GetTid() const { return tid_; }
+    void ShutDown() { state_ = false; }
 
 private:
- 	void wakeup();
-  	void handleRead();
-  	void doPendingFunctors();
-  	void handleConn();
+    bool state_;
+    thread::id tid_;
+    int wakefd_;
+    Channel wake_channel_;
+    Poller poller_;
+    MutexLock mutex_;
 
-private:
-	// 状态参数方便GDB调试时保证loop的状态时正确的
-  	bool looping_;
-  	shared_ptr<Epoll> poller_;
-  	int wakeupFd_;
-  	bool quit_;
-  	bool eventHandling_;
-  	mutable MutexLock mutex_;
-  	std::vector<Functor> pendingFunctors_;
-  	bool callingPendingFunctors_;
-  	const pid_t threadId_;
-  	shared_ptr<Channel> pwakeupChannel_; // 注意channel都保持是shared_ptr
+    vector<Channel*> activechannel_list_;
+    vector<Functor> functor_list_;
+
+
 };
-
-
+#endif //MYPROJECT_EVENTLOOP_H

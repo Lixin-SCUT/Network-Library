@@ -1,29 +1,44 @@
-// EventLoopThread.h
-// Created by Lixin on 2020.02.17
+//
+// Created by 黎鑫 on 2020/4/21.
+//
 
-#pragma once
+#ifndef MYPROJECT_EVENTLOOPTHREAD_H
+#define MYPROJECT_EVENTLOOPTHREAD_H
 
-#include "EventLoop.h"
-#include "base/Condition.h"
-#include "base/MutexLock.h"
-#include "base/Thread.h"
 #include "base/noncopyable.h"
+#include "EventLoop.h"
+#include <thread>
+#include <string>
+#include <sstream>
 
+using std::thread;
+using std::string;
+using std::this_thread::get_id;
 
-class EventLoopThread : noncopyable 
+class EventLoopThread : noncopyable
 {
 public:
-	EventLoopThread();
-	~EventLoopThread();
-	EventLoop* startLoop();
+    EventLoopThread(string thread_name = "I/O thread");
+    ~EventLoopThread();
+
+    void StartLoop();
+    void ThreadFunc();
+
+    EventLoop* GetLoop() const { return loop_;}
+    string GetTid()
+    {
+        std::stringstream ss;
+        ss << tid_;
+        return ss.str();
+    }
 
 private:
-	void threadFunc();
+    thread thread_;
+    thread::id tid_;
+    string thread_name_;
+    EventLoop* loop_;
 
-private:
-	EventLoop* loop_;
-	bool exiting_;
-	Thread thread_;
-	MutexLock mutex_;
-	Condition cond_;
+
 };
+
+#endif //MYPROJECT_EVENTLOOPTHREAD_H
