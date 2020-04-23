@@ -6,9 +6,9 @@
 #define MYPROJECT_TIMER_H
 
 #include <functional>
-#include "base/noncopyable.h"
+#include "base/copyable.h"
 
-class Timer : noncopyable
+class Timer : public copyable
 {
 public:
     typedef std::function<void()> CallBack;

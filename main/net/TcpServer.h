@@ -25,24 +25,24 @@ const int kSoftLimit = 100000;
 class TcpServer : noncopyable
 {
 public:
-    typedef function<void(shared_ptr<TcpConnection>&, string&)> MessageCallBack;
-    typedef function<void(shared_ptr<TcpConnection>&)> CallBack;
+    typedef function<void(const shared_ptr<TcpConnection>&, string&)> MessageCallBack;
+    typedef function<void(const shared_ptr<TcpConnection>&)> CallBack;
 
     TcpServer(EventLoop *loop, const int port, const int threadnum = 0);
     ~TcpServer();
 
     void Start();
 
-    void SetNewConnectionCallBack(CallBack& cb)
+    void SetNewConnectionCallBack(const CallBack& cb)
     {   newconnection_callback_ = cb; }
 
-    void SetMessageCallback(MessageCallBack& cb)
+    void SetMessageCallback(const MessageCallBack& cb)
     {   message_callback_ = cb; }
-    void SetSendCompleteCallBack(CallBack& cb)
+    void SetSendCompleteCallBack(const CallBack& cb)
     {   sendcomplete_callback_ = cb; }
-    void SetErrorCompleteCallBack(CallBack& cb)
+    void SetErrorCallBack(const CallBack& cb)
     {   error_callback_ = cb; }
-    void SetCloseCallBack(CallBack& cb)
+    void SetCloseCallBack(const CallBack& cb)
     {   close_callback_ = cb; }
 
 private:
