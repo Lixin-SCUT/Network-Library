@@ -11,6 +11,7 @@
 #include "../TcpServer.h"
 #include "../base/MutexLock.h"
 #include "../Timer.h"
+#include "../WorkThreadPool.h"
 #include "HttpSession.h"
 
 #include <functional>
@@ -43,6 +44,7 @@ private:
     map<shared_ptr<TcpConnection>, shared_ptr<HttpSession>> connect_list_;
     map<shared_ptr<TcpConnection>, shared_ptr<Timer>> timer_list_;
 
+    WorkThreadPool workthreadpool_;
 };
 
 #endif //MYPROJECT_HTTPSERVER_H

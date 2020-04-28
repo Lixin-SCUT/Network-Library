@@ -79,6 +79,11 @@ void AsyncLogging::LogLoop()
                 buf_vec_[i].reset();
             }
             buf_vec_.clear();
+            if(buf_vec_.size() > 16)
+            {
+                buf_vec_.resize(16);
+                buf_vec_.shrink_to_fit();
+            }
         }
 
         if(buffer_to_write.size() > 4)

@@ -13,7 +13,8 @@ HttpServer::HttpServer(EventLoop *loop, const int port, const int threadnum)
     : server_(loop, port, threadnum),
       mutex_(),
       connect_list_(),
-      timer_list_()
+      timer_list_(),
+      workthreadpool_(threadnum)
 {
     server_.SetNewConnectionCallBack(bind(&HttpServer::HandleNewConnection, this, _1));
     server_.SetMessageCallback(bind(&HttpServer::HandleMessageCallBack, this, _1, _2));
@@ -30,6 +31,7 @@ HttpServer::~HttpServer()
 void HttpServer::Start()
 {
     server_.Start();
+    workthreadpool_.Start();
 }
 
 void HttpServer::HandleNewConnection(const shared_ptr<TcpConnection> connection)
@@ -55,24 +57,34 @@ void HttpServer::HandleMessageCallBack(const shared_ptr<TcpConnection> connectio
         http_session = connect_list_[connection];
         timer = timer_list_[connection];
     }
-
     timer->Adjust(Timer::TimerType::ONCE, 4096,bind(&TcpConnection::ShutDown, connection));
 
     HttpRequestContext http_request_context;
     string response_context;
-
     bool result = http_session->PraseHttpRequest(str, http_request_context);
 
     if(!result)
     {
         http_session->HttpError(400, "Bad Request", http_request_context, response_context);
+        connection->Send(response_context);
+        return;
+    }
+
+    if (workthreadpool_.GetThreadNum() > 0)
+    {
+        workthreadpool_.AddTask([=]() mutable {
+            //string response_context;
+            http_session->HttpProcess(http_request_context, response_context);
+            connection->Send(response_context);
+        });
     }
     else
     {
         http_session->HttpProcess(http_request_context, response_context);
+        connection->Send(response_context);
     }
-    connection->Send(response_context);
     return;
+
 }
 
 void HttpServer::HandleSendComplete(const shared_ptr<TcpConnection> connection)
