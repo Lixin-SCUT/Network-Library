@@ -42,8 +42,8 @@
 04.20：搭建Reactor模式中的主体部分EventLoop+Channel+Poller。  
 04.21: 增加连接处理线程池，主要使用Round-Robin轮询调度分发策略。  
 04.22: 增加连接管理，修改epoll的LT模式为ET模式，提高突发高并发连接的处理能力。  
-04.23：增加ECHO服务器实例和HTTP服务器实例。 
-04.28: 增加了工作线程池WorkThreadPool，利用条件变量进行空闲线程分配。
+04.23：增加ECHO服务器实例和HTTP服务器实例。   
+04.28: 增加了工作线程池WorkThreadPool，利用条件变量进行空闲线程分配。   
 
 TODO： 参考Google C++编程规范进行格式修改等
   
